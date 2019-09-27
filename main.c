@@ -16,9 +16,9 @@ static GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 static GLfloat light_ambient[] = { 0.2F, 0.2F, 0.2F, 1.0F };
 
 // Material properties
-static GLfloat mat_ambient[] = { 1.0F, 0.0F, 0.0F, 1.0F };
-static GLfloat mat_specular[] = { 0.1F, 0.1F, 0.0F, 1.0F };
-static GLfloat mat_diffuse[] = { 0.9F, 0.5F, 0.0F, 1.0F };
+static GLfloat mat_ambient[] = { 0.1F, 0.1F, 0.1F, 1.0F };
+static GLfloat mat_specular[] = { 0.1F, 0.1F, 0.1F, 1.0F };
+static GLfloat mat_diffuse[] = { 0.8F, 0.8F, 0.8F, 1.0F };
 static GLfloat mat_shininess[] = { 0.1F };
 
 const int meshSize = 16;
@@ -30,7 +30,7 @@ void resize(int, int);
 void display(void);
 void drawSubmarine(void);
 
-
+GLUquadricObj *qobj;
 
 int main(int argc, char** argv)
 {
@@ -93,15 +93,19 @@ void init(int w, int h)
 		dir2v);
 
 	SetMaterialQM(&groundMesh, 
-		NewVector3D(0.0f, 0.05f, 0.0f),
-		NewVector3D(0.4f, 0.8f, 0.4f),
+		NewVector3D(0.0f, 0.0f, 0.9f),
+		NewVector3D(0.4f, 0.4f, 0.4f),
 		NewVector3D(0.04f, 0.04f, 0.04f),
-		0.2);
+		0);
 
 	// Set up the bounding box of the scene
 	// Currently unused. You could set up bounding boxes for your objects eventually.
 	//Set(&BBox.min, -8.0f, 0.0, -8.0);
 	//Set(&BBox.max, 8.0f, 6.0,  8.0);
+	
+	qobj = gluNewQuadric();
+	gluQuadricDrawStyle(qobj, GLU_FILL);
+	gluQuadricNormals(qobj, GLU_SMOOTH);
 }
 
 void resize(int width, int height)
@@ -116,7 +120,7 @@ void resize(int width, int height)
 	glLoadIdentity();
 
 	gluLookAt(
-		5, 8, 15,
+		0, 8, 15,
 		0, 0, 0,
 		0, 1, 0
 	);
@@ -141,12 +145,22 @@ void drawSubmarine()
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	glPushMatrix();
+	glPushMatrix(); // full model
+	glTranslatef(0.0, 2.0, 0.0); // move into position
+
+	float length = 8;
+	glPushMatrix(); // main body
+	glTranslatef(-length / 2, 0, 0);
+	glRotatef(90,0,1,0);
+	gluCylinder(qobj,
+		1,
+		1,
+		length,
+		20,
+		20);
 	
-	glTranslatef(0.0, 2.0, 0.0);
-	glScalef(6.0, 1.0, 1.0);
-	glutSolidCube(1.0);
+	glPopMatrix(); // end main body
 	
-	glPopMatrix();
+	glPopMatrix(); // end full model
 	
 }

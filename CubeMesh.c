@@ -44,8 +44,8 @@ CubeMesh newCube()
     Set(&cube.dim, 2.0f, 2.0f, 2.0f);
 
     cube.mat_ambient[0] = 0.0;
-    cube.mat_ambient[1] = 0.0f;
-    cube.mat_ambient[2] = 0.05;
+    cube.mat_ambient[1] = 0.05f;
+    cube.mat_ambient[2] = 0.0;
     cube.mat_ambient[3] = 1.0;
     cube.mat_specular[0] = 0.0;
     cube.mat_specular[1] = 0.0;
