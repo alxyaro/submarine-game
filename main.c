@@ -29,8 +29,12 @@ void init(int, int);
 void resize(int, int);
 void display(void);
 void drawSubmarine(void);
+void drawFin(void);
+void TEMP_rotation(void);
 
 GLUquadricObj *qobj;
+
+int modelRotation = 0;
 
 int main(int argc, char** argv)
 {
@@ -49,9 +53,20 @@ int main(int argc, char** argv)
 	//glutKeyboardFunc(keyboard);
 	//glutSpecialFunc(functionKeys);
 
+	TEMP_rotation();
+	
 	glutMainLoop();
 
 	return 0;
+}
+
+void TEMP_rotation()
+{
+	modelRotation += 1;
+	if (modelRotation >= 360)
+		modelRotation -= 360;
+	glutPostRedisplay();
+	glutTimerFunc(50, TEMP_rotation, 0);
 }
 
 // Set up OpenGL. For viewport and projection setup see reshape(). */
@@ -105,7 +120,8 @@ void init(int w, int h)
 	
 	qobj = gluNewQuadric();
 	gluQuadricDrawStyle(qobj, GLU_FILL);
-	gluQuadricNormals(qobj, GLU_SMOOTH);
+
+	glEnable(GL_POLYGON_SMOOTH);
 }
 
 void resize(int width, int height)
@@ -147,20 +163,68 @@ void drawSubmarine()
 
 	glPushMatrix(); // full model
 	glTranslatef(0.0, 2.0, 0.0); // move into position
+	glRotatef(modelRotation, 0, 1, 0); // TEMP: rotate whole model
 
-	float length = 8;
+	double baseLength = 8;
 	glPushMatrix(); // main body
-	glTranslatef(-length / 2, 0, 0);
+	glTranslatef(-baseLength / 2, 0, 0);
 	glRotatef(90,0,1,0);
 	gluCylinder(qobj,
 		1,
 		1,
-		length,
+		baseLength-2,
 		20,
 		20);
-	
 	glPopMatrix(); // end main body
+
+	glPushMatrix();
+	glTranslatef(-baseLength / 2,  0, 0);
+	glScalef(1.5f,1,1);
+	gluSphere(qobj,1,20,20);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(2, 0, 0);
+	glScalef(3.5f, 1, 1);
+	gluSphere(qobj, 1, 30, 30);
+	glPopMatrix();
+
+	// SIDE FINS
+	glPushMatrix();
+	// TODO
+	glPopMatrix();
+
+	
+	// BACK FINS
+	glPushMatrix();
+	glTranslatef(4.8, 0, 0); // move to the back of the sub
+	for (int i = 0; i < 4; i++)
+	{
+		glPushMatrix();
+		glRotatef(90*i, 1, 0, 0); // rotate
+		glTranslatef(0, 0.3, 0); // distance from the submarine
+		drawFin();
+		glPopMatrix();
+	}
+	glPopMatrix();
 	
 	glPopMatrix(); // end full model
 	
+}
+
+void drawFin()
+{
+	glScalef(0.8, 0.5, 0.2);
+	glRotatef(-3,0,0,1);
+
+	glPushMatrix();
+	glRotatef(-90, 1, 0, 0);
+	gluCylinder(qobj, 0.5, 0.4, 2, 20, 20);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0,2,0);
+	glScalef(1, 0.2, 1);
+	gluSphere(qobj,0.4,20,20);
+	glPopMatrix();
 }
