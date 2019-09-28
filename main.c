@@ -34,8 +34,11 @@ void drawSubTower(void);
 void drawFin(void);
 void functionKeys(int,int,int);
 void TEMP_rotation(void);
+void drawSubPropeller(void);
 
 GLUquadricObj *qobj;
+
+float propellerRotation = 0;
 
 int modelRotation = 0;
 
@@ -56,7 +59,7 @@ int main(int argc, char** argv)
 	//glutKeyboardFunc(keyboard);
 	glutSpecialFunc(functionKeys);
 
-	//TEMP_rotation();
+	TEMP_rotation();
 	
 	glutMainLoop();
 
@@ -65,11 +68,11 @@ int main(int argc, char** argv)
 
 void TEMP_rotation()
 {
-	modelRotation += 1;
-	if (modelRotation >= 360)
-		modelRotation -= 360;
+	propellerRotation += 2;
+	if (propellerRotation >= 360)
+		propellerRotation -= 360;
 	glutPostRedisplay();
-	glutTimerFunc(50, TEMP_rotation, 0);
+	glutTimerFunc(20, TEMP_rotation, 0);
 }
 
 void functionKeys(int key, int x, int y)
@@ -228,21 +231,8 @@ void drawSubmarine()
 	}
 	glPopMatrix();
 
-	const double radius = 0.52, radiusEnd = 0.45, length = 0.4, thickness = 0.07, thicknessEnd = 0.04;
-	glPushMatrix();
-	glTranslatef(5.4, 0, 0); // move to the back of the sub
-	glRotatef(90, 0, 1, 0);
-	gluCylinder(qobj, radius, radiusEnd, length, 20, 20);
-	gluCylinder(qobj, radius - thickness, radiusEnd - thicknessEnd, length, 20, 20);
-
-	glutSolidTorus(thickness / 2, radius - thickness / 2, 20, 20);
-	
-	glPushMatrix();
-	glTranslatef(0, 0, length);
-	glutSolidTorus(thicknessEnd / 2, radiusEnd - thicknessEnd / 2, 20, 20);
-	glPopMatrix();
-	
-	glPopMatrix();
+	// PROPELLER
+	drawSubPropeller();
 	
 	glPopMatrix(); // end full model
 	
@@ -321,5 +311,58 @@ void drawFin()
 	// TEMP: p' = CTM * S(0.8,0.5,0.2) * R(-3,0,0,1) * T(0,2,0) * S(1,0.2,1) * p
 	glScalef(1, 0.2, 1);
 	gluSphere(qobj,0.4,20,20);
+	glPopMatrix();
+}
+
+void drawSubPropeller()
+{
+	const double radius = 0.52, radiusEnd = 0.45, length = 0.4, thickness = 0.07, thicknessEnd = 0.04;
+	glPushMatrix();
+	
+	glTranslatef(5.4, 0, 0); // move to the back of the sub
+
+	glPushMatrix(); // ring
+	
+	glRotatef(90, 0, 1, 0);
+	gluCylinder(qobj, radius, radiusEnd, length, 20, 20);
+	gluCylinder(qobj, radius - thickness, radiusEnd - thicknessEnd, length, 20, 20);
+
+	glutSolidTorus(thickness / 2, radius - thickness / 2, 20, 20);
+
+	glPushMatrix();
+	glTranslatef(0, 0, length);
+	glutSolidTorus(thicknessEnd / 2, radiusEnd - thicknessEnd / 2, 20, 20);
+	glPopMatrix();
+
+	glPopMatrix(); // end ring
+
+	glPushMatrix(); // propeller
+
+	glPushMatrix(); // propeller rod
+	glTranslatef(-0.1, 0, 0);
+	glRotatef(90, 0, 1, 0);
+	gluCylinder(qobj, 0.06, 0.06, 0.5, 10, 10);
+	glPopMatrix();
+	
+	glTranslatef(length/2, 0, 0);
+	for (int i = 0; i < 4; i++)
+	{
+		glPushMatrix();
+		glRotatef(i * 90 - propellerRotation, 1, 0, 0); // rotate the blade
+		glRotatef(-30, 0, 1, 0); // angle the blade outwards a bit
+		glScalef(0.15, 0.15, 0.15); // scale down the whole thing
+		glScalef(1, 1, 0.3f); // make the shapes thin - like a propeller blade
+		glPushMatrix();
+		glRotatef(-90, 1, 0, 0);
+		gluCylinder(qobj, 0.5, 0.5, 1.5, 15, 15);
+		glPopMatrix();
+		glTranslatef(0, 1.2, 0);
+		glScalef(1, 2.5f, 1);
+		gluSphere(qobj, 0.5, 15, 15);
+		glPopMatrix();
+	}
+	
+	glPopMatrix(); // end propeller
+
 	glPopMatrix();
 }
