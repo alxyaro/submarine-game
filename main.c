@@ -30,6 +30,7 @@ void resize(int, int);
 void display(void);
 void drawSubmarine(void);
 void drawSubBody(void);
+void drawSubTower(void);
 void drawFin(void);
 void functionKeys(int,int,int);
 void TEMP_rotation(void);
@@ -188,6 +189,9 @@ void drawSubmarine()
 	// MAIN BODY
 	drawSubBody();
 
+	// TOWER
+	drawSubTower();
+
 	// SIDE FINS
 	glPushMatrix();
 	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * p
@@ -224,18 +228,18 @@ void drawSubmarine()
 	}
 	glPopMatrix();
 
-	const double radius = 0.5, radiusEnd = 0.45, length = 0.4, thickness = 0.06;
+	const double radius = 0.52, radiusEnd = 0.45, length = 0.4, thickness = 0.07, thicknessEnd = 0.04;
 	glPushMatrix();
-	glTranslatef(5.3, 0, 0); // move to the back of the sub
+	glTranslatef(5.4, 0, 0); // move to the back of the sub
 	glRotatef(90, 0, 1, 0);
 	gluCylinder(qobj, radius, radiusEnd, length, 20, 20);
-	gluCylinder(qobj, radius - thickness, radiusEnd - thickness, length, 20, 20);
+	gluCylinder(qobj, radius - thickness, radiusEnd - thicknessEnd, length, 20, 20);
 
 	glutSolidTorus(thickness / 2, radius - thickness / 2, 20, 20);
 	
 	glPushMatrix();
 	glTranslatef(0, 0, length);
-	glutSolidTorus(thickness / 2, radiusEnd - thickness / 2, 20, 20);
+	glutSolidTorus(thicknessEnd / 2, radiusEnd - thicknessEnd / 2, 20, 20);
 	glPopMatrix();
 	
 	glPopMatrix();
@@ -278,6 +282,24 @@ void drawSubBody()
 	glScalef(3.5f, 1, 1);
 	gluSphere(qobj, 1, 30, 30);
 	glPopMatrix(); // end back sphere
+}
+
+void drawSubTower()
+{
+	glPushMatrix();
+	glTranslatef(-2, 0.8, 0);
+	glRotatef(-25, 0, 0, 1);
+	glScalef(1, 1.2, 1);
+	glRotatef(20, 0, 0, 1);
+	glScalef(1, 1, 0.5);
+	glPushMatrix();
+	glRotatef(-90, 1, 0, 0);
+	gluCylinder(qobj, 0.5, 0.5, 0.8, 20, 20);
+	glPopMatrix();
+	glTranslatef(0, 0.8, 0);
+	glScalef(1, 0.3, 1);
+	gluSphere(qobj, 0.5, 20, 20);
+	glPopMatrix();
 }
 
 void drawFin()
