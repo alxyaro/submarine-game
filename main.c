@@ -29,6 +29,7 @@ void init(int, int);
 void resize(int, int);
 void display(void);
 void drawSubmarine(void);
+void drawSubBody(void);
 void drawFin(void);
 void TEMP_rotation(void);
 
@@ -108,10 +109,10 @@ void init(int w, int h)
 		dir2v);
 
 	SetMaterialQM(&groundMesh, 
-		NewVector3D(0.0f, 0.0f, 0.9f),
-		NewVector3D(0.4f, 0.4f, 0.4f),
-		NewVector3D(0.04f, 0.04f, 0.04f),
-		0);
+		NewVector3D(0.0f, 0.0f, 0.9f), // ambient
+		NewVector3D(0.4f, 0.4f, 0.4f), // diffuse
+		NewVector3D(0.04f, 0.04f, 0.04f), // specular
+		0); // shininess
 
 	// Set up the bounding box of the scene
 	// Currently unused. You could set up bounding boxes for your objects eventually.
@@ -139,7 +140,7 @@ void resize(int width, int height)
 		0, 8, 15,
 		0, 0, 0,
 		0, 1, 0
-	);
+	); // CTM = I * V
 }
 
 void display()
@@ -161,47 +162,46 @@ void drawSubmarine()
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	glPushMatrix(); // full model
+	glPushMatrix(); // begin full model
+
+	// POSITION/ROTATION
+	// TEMP: p' = CTM * P(0,2,0) * p
 	glTranslatef(0.0, 2.0, 0.0); // move into position
-	glRotatef(modelRotation, 0, 1, 0); // TEMP: rotate whole model
+	glRotatef(modelRotation, 0, 1, 0); // TODO REMOVE: rotate whole model
 
-	double baseLength = 8;
-	glPushMatrix(); // main body
-	glTranslatef(-baseLength / 2, 0, 0);
-	glRotatef(90,0,1,0);
-	gluCylinder(qobj,
-		1,
-		1,
-		baseLength-2,
-		20,
-		20);
-	glPopMatrix(); // end main body
-
-	glPushMatrix();
-	glTranslatef(-baseLength / 2,  0, 0);
-	glScalef(1.5f,1,1);
-	gluSphere(qobj,1,20,20);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(2, 0, 0);
-	glScalef(3.5f, 1, 1);
-	gluSphere(qobj, 1, 30, 30);
-	glPopMatrix();
+	// MAIN BODY
+	drawSubBody();
 
 	// SIDE FINS
 	glPushMatrix();
-	// TODO
+	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * p
+	glTranslatef(-3.4, 0, 0); // move closer to the front of the sub
+	glPushMatrix();
+	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(90,1,0,0) * p
+	glRotatef(90, 1, 0, 0); // rotate to the right
+	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(90,1,0,0) * T(0,0.8,0) p
+	glTranslatef(0, 0.8, 0); // distance from the submarine
+	drawFin(); // right fin
+	glPopMatrix();
+	glPushMatrix();
+	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(-90,1,0,0) * p
+	glRotatef(-90, 1, 0, 0); // rotate to the left
+	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(-90,1,0,0) * T(0,0.8,0) p
+	glTranslatef(0, 0.8, 0); // distance from the submarine
+	drawFin(); // left fin
+	glPopMatrix();
 	glPopMatrix();
 
-	
 	// BACK FINS
 	glPushMatrix();
+	// TEMP: p' = CTM * P(0,2,0) * T(4.8,0,0) * p
 	glTranslatef(4.8, 0, 0); // move to the back of the sub
 	for (int i = 0; i < 4; i++)
 	{
 		glPushMatrix();
+		// TEMP: p' = CTM * P(0,2,0) * T(4.8,0,0) * R(_,1,0,0) * p
 		glRotatef(90*i, 1, 0, 0); // rotate
+		// TEMP: p' = CTM * P(0,2,0) * T(4.8,0,0) * R(_,1,0,0) * T(0,0.3,0) * p
 		glTranslatef(0, 0.3, 0); // distance from the submarine
 		drawFin();
 		glPopMatrix();
@@ -212,18 +212,59 @@ void drawSubmarine()
 	
 }
 
+void drawSubBody()
+{
+	const double baseLength = 8;
+	glPushMatrix();
+
+	// TEMP: p' = CTM * T(-baseLength/2,0,0) * p
+	glTranslatef(-baseLength / 2, 0, 0); // transition to the front of the sub
+
+	glPushMatrix(); // main body
+	// TEMP: p' = CTM * T(-baseLength/2,0,0) * R(90,0,1,0) * p
+	glRotatef(90, 0, 1, 0);
+	gluCylinder(qobj,
+		1,
+		1,
+		baseLength - 2,
+		20,
+		20);
+	glPopMatrix(); // end main body
+
+	glPushMatrix(); // front sphere
+	// TEMP: p' = CTM * T(-baseLength/2,0,0) * S(1.5,1,1) * p
+	glScalef(1.5f, 1, 1);
+	gluSphere(qobj, 1, 20, 20);
+	glPopMatrix(); // end front sphere
+
+	glPopMatrix();
+
+	glPushMatrix(); // back sphere
+	// TEMP: p' = CTM * T(2,0,0) * p
+	glTranslatef(2, 0, 0);
+	// TEMP: p' = CTM * T(2,0,0) * S(3.5,1,1) * p
+	glScalef(3.5f, 1, 1);
+	gluSphere(qobj, 1, 30, 30);
+	glPopMatrix(); // end back sphere
+}
+
 void drawFin()
 {
+	// TEMP: p' = CTM * S(0.8,0.5,0.2) * p
 	glScalef(0.8, 0.5, 0.2);
+	// TEMP: p' = CTM * S(0.8,0.5,0.2) * R(-3,0,0,1) * p
 	glRotatef(-3,0,0,1);
 
 	glPushMatrix();
-	glRotatef(-90, 1, 0, 0);
+	// TEMP: p' = CTM * S(0.8,0.5,0.2) * R(-3,0,0,1) * R(-90,1,0,0) * p
+	glRotatef(-90, 1, 0, 0); // rotate cylinder to be upright
 	gluCylinder(qobj, 0.5, 0.4, 2, 20, 20);
 	glPopMatrix();
 
 	glPushMatrix();
+	// TEMP: p' = CTM * S(0.8,0.5,0.2) * R(-3,0,0,1) * T(0,2,0) * p
 	glTranslatef(0,2,0);
+	// TEMP: p' = CTM * S(0.8,0.5,0.2) * R(-3,0,0,1) * T(0,2,0) * S(1,0.2,1) * p
 	glScalef(1, 0.2, 1);
 	gluSphere(qobj,0.4,20,20);
 	glPopMatrix();
