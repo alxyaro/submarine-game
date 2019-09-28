@@ -31,6 +31,7 @@ void display(void);
 void drawSubmarine(void);
 void drawSubBody(void);
 void drawFin(void);
+void functionKeys(int,int,int);
 void TEMP_rotation(void);
 
 GLUquadricObj *qobj;
@@ -52,9 +53,9 @@ int main(int argc, char** argv)
 	//glutMouseFunc(mouse);
 	//glutMotionFunc(mouseMotionHandler);
 	//glutKeyboardFunc(keyboard);
-	//glutSpecialFunc(functionKeys);
+	glutSpecialFunc(functionKeys);
 
-	TEMP_rotation();
+	//TEMP_rotation();
 	
 	glutMainLoop();
 
@@ -68,6 +69,21 @@ void TEMP_rotation()
 		modelRotation -= 360;
 	glutPostRedisplay();
 	glutTimerFunc(50, TEMP_rotation, 0);
+}
+
+void functionKeys(int key, int x, int y)
+{
+	switch(key)
+	{
+	case GLUT_KEY_RIGHT:
+		modelRotation += 10;
+		glutPostRedisplay();
+		break;
+	case GLUT_KEY_LEFT:
+		modelRotation -= 10;
+		glutPostRedisplay();
+		break;
+	}
 }
 
 // Set up OpenGL. For viewport and projection setup see reshape(). */
@@ -206,6 +222,22 @@ void drawSubmarine()
 		drawFin();
 		glPopMatrix();
 	}
+	glPopMatrix();
+
+	const double radius = 0.5, radiusEnd = 0.45, length = 0.4, thickness = 0.06;
+	glPushMatrix();
+	glTranslatef(5.3, 0, 0); // move to the back of the sub
+	glRotatef(90, 0, 1, 0);
+	gluCylinder(qobj, radius, radiusEnd, length, 20, 20);
+	gluCylinder(qobj, radius - thickness, radiusEnd - thickness, length, 20, 20);
+
+	glutSolidTorus(thickness / 2, radius - thickness / 2, 20, 20);
+	
+	glPushMatrix();
+	glTranslatef(0, 0, length);
+	glutSolidTorus(thickness / 2, radiusEnd - thickness / 2, 20, 20);
+	glPopMatrix();
+	
 	glPopMatrix();
 	
 	glPopMatrix(); // end full model
