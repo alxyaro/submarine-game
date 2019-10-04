@@ -277,16 +277,31 @@ void drawSubBody()
 void drawSubTower()
 {
 	glPushMatrix();
-	glTranslatef(-2, 0.8, 0);
-	glRotatef(-25, 0, 0, 1);
+	// TEMP: p' = CTM * T(-2,0.8,0) * p
+	glTranslatef(-2, 0.8, 0); // move relatively to the top-front of the submarine
+
+	// extra - warping the tower a bit
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * p
+	glRotatef(-25, 0, 0, 1); // rotate
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * S(1,1.2,1) * p
 	glScalef(1, 1.2, 1);
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * S(1,1.2,1) * R(20,0,0,1) * p
 	glRotatef(20, 0, 0, 1);
-	glScalef(1, 1, 0.5);
+
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * S(1,1.2,1) * R(20,0,0,1) * S(1,1,0.5) * p
+	glScalef(1, 1, 0.5); // flatten the combined cylinder/sphere
+
+	// the body of the tower
 	glPushMatrix();
-	glRotatef(-90, 1, 0, 0);
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * S(1,1.2,1) * R(20,0,0,1) * S(1,1,0.5) * R(-90,1,0,0) * p
+	glRotatef(-90, 1, 0, 0); // rotate cylinder upwards
 	gluCylinder(qobj, 0.5, 0.5, 0.8, 20, 20);
 	glPopMatrix();
+
+	// the top part (hat) of the tower
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * S(1,1.2,1) * R(20,0,0,1) * S(1,1,0.5) * T(0,0.8,0) * p
 	glTranslatef(0, 0.8, 0);
+	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * S(1,1.2,1) * R(20,0,0,1) * S(1,1,0.5) * T(0,0.8,0) * S(1,0.3,1) * p
 	glScalef(1, 0.3, 1);
 	gluSphere(qobj, 0.5, 20, 20);
 	glPopMatrix();
@@ -318,11 +333,13 @@ void drawSubPropeller()
 {
 	const double radius = 0.52, radiusEnd = 0.45, length = 0.4, thickness = 0.07, thicknessEnd = 0.04;
 	glPushMatrix();
-	
+
+	// TEMP: p' = CTM * T(5.4,0,0) * p
 	glTranslatef(5.4, 0, 0); // move to the back of the sub
 
 	glPushMatrix(); // ring
-	
+
+	// TEMP: p' = CTM * T(5.4,0,0) * R(90,0,1,0) * p
 	glRotatef(90, 0, 1, 0);
 	gluCylinder(qobj, radius, radiusEnd, length, 20, 20);
 	gluCylinder(qobj, radius - thickness, radiusEnd - thicknessEnd, length, 20, 20);
@@ -330,6 +347,7 @@ void drawSubPropeller()
 	glutSolidTorus(thickness / 2, radius - thickness / 2, 20, 20);
 
 	glPushMatrix();
+	// TEMP: p' = CTM * T(5.4,0,0) * R(90,0,1,0) * T(0,0,length) * p
 	glTranslatef(0, 0, length);
 	glutSolidTorus(thicknessEnd / 2, radiusEnd - thicknessEnd / 2, 20, 20);
 	glPopMatrix();
@@ -339,25 +357,36 @@ void drawSubPropeller()
 	glPushMatrix(); // propeller
 
 	glPushMatrix(); // propeller rod
+	// TEMP: p' = CTM * T(5.4,0,0) * T(-0.1,0,0) * p
 	glTranslatef(-0.1, 0, 0);
+	// TEMP: p' = CTM * T(5.4,0,0) * T(-0.1,0,0) * R(90,0,1,0) * p
 	glRotatef(90, 0, 1, 0);
 	gluCylinder(qobj, 0.06, 0.06, 0.5, 10, 10);
-	glPopMatrix();
-	
-	glTranslatef(length/2, 0, 0);
+	glPopMatrix(); // end propeller rod
+
+	// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * p
+	glTranslatef(length/2, 0, 0); // translate to the center of the propeller ring/shell
 	for (int i = 0; i < 4; i++)
 	{
 		glPushMatrix();
+		// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * R(_,1,0,1) * p
 		glRotatef(i * 90 - propellerRotation, 1, 0, 0); // rotate the blade
+		// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * R(_,1,0,1) * R(-30,0,1,0) * p
 		glRotatef(-30, 0, 1, 0); // angle the blade outwards a bit
+		// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * R(_,1,0,1) * R(-30,0,1,0) * S(0.15) * p
 		glScalef(0.15, 0.15, 0.15); // scale down the whole thing
-		glScalef(1, 1, 0.3f); // make the shapes thin - like a propeller blade
+		// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * R(_,1,0,1) * R(-30,0,1,0) * S(0.15) * S(1,1,0.3) * p
+		glScalef(1, 1, 0.3); // make the shapes thin - like a propeller blade
+
 		glPushMatrix();
+		// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * R(_,1,0,1) * R(-30,0,1,0) * S(0.15) * S(1,1,0.3) * R(-90,1,0,1) * p
 		glRotatef(-90, 1, 0, 0);
 		gluCylinder(qobj, 0.5, 0.5, 1.5, 15, 15);
 		glPopMatrix();
+
 		glTranslatef(0, 1.2, 0);
-		glScalef(1, 2.5f, 1);
+		// TEMP: p' = CTM * T(5.4,0,0) * T(length/2,0,0) * R(_,1,0,1) * R(-30,0,1,0) * S(0.15) * S(1,1,0.3) * S(1,2.5,1) * p
+		glScalef(1, 2.5, 1);
 		gluSphere(qobj, 0.5, 15, 15);
 		glPopMatrix();
 	}
