@@ -1,3 +1,4 @@
+freeglut/
 *.dll
 *.vcxproj*
 Debug/
