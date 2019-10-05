@@ -345,6 +345,19 @@ void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	// set materials
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	
+	// stationary cube
+	glPushMatrix();
+	glTranslatef(6,1.5,0);
+	glutSolidCube(3);
+	glPopMatrix();
+	// end stationary cube
+	
 	drawSubmarine();
 
 	DrawMeshQM(&groundMesh, meshSize); // draw ground mesh
@@ -354,12 +367,6 @@ void display()
 
 void drawSubmarine()
 {
-	// set materials
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-
 	glPushMatrix(); // begin full model
 
 	// POSITION/ROTATION
