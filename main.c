@@ -39,8 +39,8 @@ GLUquadricObj* qobj;
 
 float propellerRotation = 0;
 
-double submarinePosition[] = { 0,5,8 };
-double submarineRotation = -60;
+double submarinePosition[3];
+double submarineRotation;
 
 
 // some rough physics
@@ -50,7 +50,7 @@ const float propellerDeceleration = 0.2f;
 float propellerSpeedPct = 0;
 
 const float terminalVelocity = 3;
-const float waterDrag = 0.3f; // aka deceleration
+const float waterDrag = 1; // aka deceleration
 float horizontalVelocity = 0;
 
 float rotationalVelocity = 0;
@@ -59,6 +59,7 @@ float verticalVelocity = 0;
 
 // prototypes
 bool keyDown(int);
+void reset(void);
 void init(int, int);
 void resize(int, int);
 void display(void);
@@ -76,6 +77,20 @@ void drawSubPropeller(void);
 bool keyDown(int key)
 {
 	return (keyMask & key) != 0;
+}
+
+void reset(void)
+{
+	submarinePosition[0] = 0;
+	submarinePosition[1] = 5;
+	submarinePosition[2] = 8;
+
+	submarineRotation = -60;
+
+	propellerSpeedPct = 0;
+	horizontalVelocity = 0;
+	rotationalVelocity = 0;
+	verticalVelocity = 0;
 }
 
 int main(int argc, char** argv)
@@ -97,7 +112,8 @@ int main(int argc, char** argv)
 	glutKeyboardUpFunc(keyboardUp);
 	glutSpecialFunc(special);
 	glutSpecialUpFunc(specialUp);
-	
+
+	reset();
 
 	mainLoop();
 	
@@ -139,7 +155,7 @@ void mainLoop()
 	}
 	propellerRotation = (float)fmod(propellerRotation + propellerSpeedPct * 7.0, 360);
 
-	horizontalVelocity += propellerSpeedPct / 50;
+	horizontalVelocity += propellerSpeedPct / 20;
 	if (horizontalVelocity > terminalVelocity)
 		horizontalVelocity = terminalVelocity;
 	if (horizontalVelocity < -terminalVelocity)
@@ -147,16 +163,9 @@ void mainLoop()
 
 	// apply drag
 	if (horizontalVelocity > 0)
-	{
-		horizontalVelocity -= waterDrag * deltaTime;
-		if (horizontalVelocity < 0)
-			horizontalVelocity = 0;
-	} else if (horizontalVelocity < 0)
-	{
-		horizontalVelocity += waterDrag * deltaTime;
-		if (horizontalVelocity > 0)
-			horizontalVelocity = 0;
-	}
+		horizontalVelocity = (float) fmax(0, horizontalVelocity - waterDrag * deltaTime);
+	else if (horizontalVelocity < 0)
+		horizontalVelocity = (float) fmin(0, horizontalVelocity + waterDrag * deltaTime);
 	
 	const float movementDelta = -1 * horizontalVelocity * deltaTime;
 
@@ -228,6 +237,8 @@ void keyboard(unsigned char key, int x, int y)
 		keyMask |= KEY_ROTATION_RIGHT; break;
 	case 'a':
 		keyMask |= KEY_ROTATION_LEFT; break;
+	case 'r':
+		reset(); break;
 	}
 }
 
@@ -265,6 +276,18 @@ void specialUp(int key, int x, int y)
 		keyMask &= ~KEY_MOVEMENT_UP; break;
 	case GLUT_KEY_DOWN:
 		keyMask &= ~KEY_MOVEMENT_DOWN; break;
+	case GLUT_KEY_F1:
+		printf("=============== Tutorial ===============\n");
+		printf("Submarine Controls:\n");
+		printf(" - hold w to move forward (start propeller)\n");
+		printf(" - hold s to move backward (reverse propeller)\n");
+		printf(" - hold d to rotate clockwise\n");
+		printf(" - hold a to rotate counter-clockwise\n");
+		printf(" - hold [up arrow] to move upwards\n");
+		printf(" - hold [down arrow] to move downwards\n");
+		printf(" - press r to reset submarine/movement\n");
+		printf("========================================\n");
+		break;
 	}
 }
 
