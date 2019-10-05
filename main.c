@@ -7,6 +7,15 @@
 
 #define PI acos(-1.0)
 
+#define KEY_MOVEMENT_FORWARD 0b00000001
+#define KEY_MOVEMENT_BACKWARD 0b00000010
+#define KEY_ROTATION_LEFT 0b00000100
+#define KEY_ROTATION_RIGHT 0b00001000
+#define KEY_MOVEMENT_UP 0b00010000
+#define KEY_MOVEMENT_DOWN 0b00100000
+
+int keyMask = 0;
+
 const int viewportWidth = 650;
 const int viewportHeight = 500;
 
@@ -30,10 +39,26 @@ GLUquadricObj* qobj;
 
 float propellerRotation = 0;
 
-double submarinePosition[] = { 0,2,0 };
-double submarineRotation = 0;
+double submarinePosition[] = { 0,5,8 };
+double submarineRotation = -60;
+
+
+// some rough physics
+
+const float propellerAcceleration = 0.8f;
+const float propellerDeceleration = 0.2f;
+float propellerSpeedPct = 0;
+
+const float terminalVelocity = 3;
+const float waterDrag = 0.3f; // aka deceleration
+float horizontalVelocity = 0;
+
+float rotationalVelocity = 0;
+float verticalVelocity = 0;
+
 
 // prototypes
+bool keyDown(int);
 void init(int, int);
 void resize(int, int);
 void display(void);
@@ -42,9 +67,16 @@ void drawSubBody(void);
 void drawSubTower(void);
 void drawFin(void);
 void keyboard(unsigned char,int,int);
-void specialKeys(int, int, int);
-void TEMP_rotation(void);
+void keyboardUp(unsigned char, int, int);
+void special(int, int, int);
+void specialUp(int, int, int);
+void mainLoop(void);
 void drawSubPropeller(void);
+
+bool keyDown(int key)
+{
+	return (keyMask & key) != 0;
+}
 
 int main(int argc, char** argv)
 {
@@ -60,23 +92,127 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	//glutMouseFunc(mouse);
 	//glutMotionFunc(mouseMotionHandler);
+	
 	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(specialKeys);
+	glutKeyboardUpFunc(keyboardUp);
+	glutSpecialFunc(special);
+	glutSpecialUpFunc(specialUp);
+	
 
-	TEMP_rotation();
+	mainLoop();
 	
 	glutMainLoop();
 
 	return 0;
 }
 
-void TEMP_rotation()
+void mainLoop()
 {
-	propellerRotation += 2;
-	if (propellerRotation >= 360)
-		propellerRotation -= 360;
+	const float deltaTime = 20 / 1000.0f; // TODO accurately calculate time since last tick
+
+	if (keyDown(KEY_MOVEMENT_FORWARD))
+	{
+		propellerSpeedPct += propellerAcceleration * deltaTime;
+		if (propellerSpeedPct > 1)
+			propellerSpeedPct = 1;
+	}
+	else if (keyDown(KEY_MOVEMENT_BACKWARD))
+	{
+		propellerSpeedPct -= propellerAcceleration * deltaTime;
+		if (propellerSpeedPct < -1)
+			propellerSpeedPct = -1;
+	}
+	else if (propellerSpeedPct != 0)
+	{
+		const float amount = propellerDeceleration * deltaTime;
+		if (propellerSpeedPct > 0)
+		{
+			propellerSpeedPct -= amount;
+			if (propellerSpeedPct < 0)
+				propellerSpeedPct = 0;
+		} else
+		{
+			propellerSpeedPct += amount;
+			if (propellerSpeedPct > 0)
+				propellerSpeedPct = 0;
+		}
+	}
+	propellerRotation = (float)fmod(propellerRotation + propellerSpeedPct * 7.0, 360);
+
+	horizontalVelocity += propellerSpeedPct / 50;
+	if (horizontalVelocity > terminalVelocity)
+		horizontalVelocity = terminalVelocity;
+	if (horizontalVelocity < -terminalVelocity)
+		horizontalVelocity = -terminalVelocity;
+
+	// apply drag
+	if (horizontalVelocity > 0)
+	{
+		horizontalVelocity -= waterDrag * deltaTime;
+		if (horizontalVelocity < 0)
+			horizontalVelocity = 0;
+	} else if (horizontalVelocity < 0)
+	{
+		horizontalVelocity += waterDrag * deltaTime;
+		if (horizontalVelocity > 0)
+			horizontalVelocity = 0;
+	}
+	
+	const float movementDelta = -1 * horizontalVelocity * deltaTime;
+
+	if (movementDelta != 0)
+	{
+		const double subRotationRadians = submarineRotation * PI / 180.0;
+		submarinePosition[0] += movementDelta * cos(subRotationRadians);
+		submarinePosition[2] -= movementDelta * sin(subRotationRadians);
+	}
+
+	// rotation
+	if (keyDown(KEY_ROTATION_RIGHT))
+	{
+		if (!keyDown(KEY_ROTATION_LEFT))
+		{
+			rotationalVelocity = (float) fmin(1.5, rotationalVelocity + 0.3);
+		}
+	} else if (keyDown(KEY_ROTATION_LEFT))
+	{
+		rotationalVelocity = (float) fmax(-1.5, rotationalVelocity - 0.3);
+	}
+
+	if (rotationalVelocity > 0)
+		rotationalVelocity = (float) fmax(0, rotationalVelocity - 0.1);
+	else if (rotationalVelocity < 0)
+		rotationalVelocity = (float) fmin(0, rotationalVelocity + 0.1);
+	
+	if (rotationalVelocity != 0)
+		submarineRotation = fmod(submarineRotation - rotationalVelocity, 360);
+	// end rotation
+
+	// vertical movement
+	if (keyDown(KEY_MOVEMENT_UP))
+	{
+		if (!keyDown(KEY_MOVEMENT_DOWN))
+		{
+			verticalVelocity = (float)fmin(1.5, verticalVelocity + 0.3);
+		}
+	}
+	else if (keyDown(KEY_MOVEMENT_DOWN))
+	{
+		verticalVelocity = (float)fmax(-1.5, verticalVelocity - 0.3);
+	}
+
+	if (verticalVelocity > 0)
+		verticalVelocity = (float)fmax(0, verticalVelocity - 0.1);
+	else if (verticalVelocity < 0)
+		verticalVelocity = (float)fmin(0, verticalVelocity + 0.1);
+
+	if (verticalVelocity != 0)
+		submarinePosition[1] += verticalVelocity/70;
+	// end vertical movement
+	
 	glutPostRedisplay();
-	glutTimerFunc(20, TEMP_rotation, 0);
+	
+	glutTimerFunc(20, mainLoop, 0);
 }
 
 void keyboard(unsigned char key, int x, int y)
@@ -84,39 +220,51 @@ void keyboard(unsigned char key, int x, int y)
 	double subRotationRadians = submarineRotation * PI / 180.0;
 	switch(key)
 	{
-	case 'd': // rotate right
-		submarineRotation = fmod(submarineRotation - 5, 360);
-		glutPostRedisplay();
-		break;
-	case 'a': // rotate left
-		submarineRotation = fmod(submarineRotation + 5, 360);
-		glutPostRedisplay();
-		break;
 	case 'w':
-		submarinePosition[0] -= 1 * cos(subRotationRadians);
-		submarinePosition[2] += 1 * sin(subRotationRadians);
-		glutPostRedisplay();
-		break;
+		keyMask |= KEY_MOVEMENT_FORWARD; break;
 	case 's':
-		submarinePosition[0] += 1 * cos(subRotationRadians);
-		submarinePosition[2] -= 1 * sin(subRotationRadians);
-		glutPostRedisplay();
-		break;
+		keyMask |= KEY_MOVEMENT_BACKWARD; break;
+	case 'd':
+		keyMask |= KEY_ROTATION_RIGHT; break;
+	case 'a':
+		keyMask |= KEY_ROTATION_LEFT; break;
 	}
 }
 
-void specialKeys(int key, int x, int y)
+void keyboardUp(unsigned char key, int x, int y)
+{
+	switch (key)
+	{
+	case 'w':
+		keyMask &= ~KEY_MOVEMENT_FORWARD; break;
+	case 's':
+		keyMask &= ~KEY_MOVEMENT_BACKWARD; break;
+	case 'd':
+		keyMask &= ~KEY_ROTATION_RIGHT; break;
+	case 'a':
+		keyMask &= ~KEY_ROTATION_LEFT; break;
+	}
+}
+
+void special(int key, int x, int y)
 {
 	switch(key)
 	{
 	case GLUT_KEY_UP:
-		submarinePosition[1] += 1;
-		glutPostRedisplay();
-		break;
+		keyMask |= KEY_MOVEMENT_UP; break;
 	case GLUT_KEY_DOWN:
-		submarinePosition[1] -= 1;
-		glutPostRedisplay();
-		break;
+		keyMask |= KEY_MOVEMENT_DOWN; break;
+	}
+}
+
+void specialUp(int key, int x, int y)
+{
+	switch (key)
+	{
+	case GLUT_KEY_UP:
+		keyMask &= ~KEY_MOVEMENT_UP; break;
+	case GLUT_KEY_DOWN:
+		keyMask &= ~KEY_MOVEMENT_DOWN; break;
 	}
 }
 
@@ -146,15 +294,15 @@ void init(int w, int h)
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);   // Nicer perspective
 
 	// Set up ground quad mesh
-	const Vector3D origin = NewVector3D(-8.0f, 0.0f, 8.0f);
+	const Vector3D origin = NewVector3D(-50.0f, 0.0f, 16.0f);
 	const Vector3D dir1v = NewVector3D(1.0f, 0.0f, 0.0f);
 	const Vector3D dir2v = NewVector3D(0.0f, 0.0f, -1.0f);
 	groundMesh = NewQuadMesh(meshSize);
 	InitMeshQM(&groundMesh,
 		meshSize,
 		origin,
-		16.0,
-		16.0,
+		100.0,
+		100.0,
 		dir1v,
 		dir2v);
 
@@ -181,13 +329,13 @@ void resize(int width, int height)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, (GLdouble) width / height, 0.2, 40.0);
+	gluPerspective(60.0, (GLdouble) width / height, 0.2, 100.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
 	gluLookAt(
-		0, 8, 15,
+		0, 10, 20,
 		0, 0, 0,
 		0, 1, 0
 	); // CTM = I * V
