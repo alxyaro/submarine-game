@@ -5,6 +5,8 @@
 #include "Vector3D.h"
 #include "QuadMesh.h"
 
+#define PI acos(-1.0)
+
 const int viewportWidth = 650;
 const int viewportHeight = 500;
 
@@ -24,6 +26,13 @@ static GLfloat mat_shininess[] = { 0.1F };
 const int meshSize = 16;
 static QuadMesh groundMesh;
 
+GLUquadricObj* qobj;
+
+float propellerRotation = 0;
+
+double submarinePosition[] = { 0,2,0 };
+double submarineRotation = 0;
+
 // prototypes
 void init(int, int);
 void resize(int, int);
@@ -32,15 +41,10 @@ void drawSubmarine(void);
 void drawSubBody(void);
 void drawSubTower(void);
 void drawFin(void);
-void functionKeys(int,int,int);
+void keyboard(unsigned char,int,int);
+void specialKeys(int, int, int);
 void TEMP_rotation(void);
 void drawSubPropeller(void);
-
-GLUquadricObj *qobj;
-
-float propellerRotation = 0;
-
-int modelRotation = 0;
 
 int main(int argc, char** argv)
 {
@@ -56,8 +60,8 @@ int main(int argc, char** argv)
 	glutDisplayFunc(display);
 	//glutMouseFunc(mouse);
 	//glutMotionFunc(mouseMotionHandler);
-	//glutKeyboardFunc(keyboard);
-	glutSpecialFunc(functionKeys);
+	glutKeyboardFunc(keyboard);
+	glutSpecialFunc(specialKeys);
 
 	TEMP_rotation();
 	
@@ -75,16 +79,42 @@ void TEMP_rotation()
 	glutTimerFunc(20, TEMP_rotation, 0);
 }
 
-void functionKeys(int key, int x, int y)
+void keyboard(unsigned char key, int x, int y)
+{
+	double subRotationRadians = submarineRotation * PI / 180.0;
+	switch(key)
+	{
+	case 'd': // rotate right
+		submarineRotation = fmod(submarineRotation - 5, 360);
+		glutPostRedisplay();
+		break;
+	case 'a': // rotate left
+		submarineRotation = fmod(submarineRotation + 5, 360);
+		glutPostRedisplay();
+		break;
+	case 'w':
+		submarinePosition[0] -= 1 * cos(subRotationRadians);
+		submarinePosition[2] += 1 * sin(subRotationRadians);
+		glutPostRedisplay();
+		break;
+	case 's':
+		submarinePosition[0] += 1 * cos(subRotationRadians);
+		submarinePosition[2] -= 1 * sin(subRotationRadians);
+		glutPostRedisplay();
+		break;
+	}
+}
+
+void specialKeys(int key, int x, int y)
 {
 	switch(key)
 	{
-	case GLUT_KEY_RIGHT:
-		modelRotation += 10;
+	case GLUT_KEY_UP:
+		submarinePosition[1] += 1;
 		glutPostRedisplay();
 		break;
-	case GLUT_KEY_LEFT:
-		modelRotation -= 10;
+	case GLUT_KEY_DOWN:
+		submarinePosition[1] -= 1;
 		glutPostRedisplay();
 		break;
 	}
@@ -185,9 +215,10 @@ void drawSubmarine()
 	glPushMatrix(); // begin full model
 
 	// POSITION/ROTATION
-	// TEMP: p' = CTM * P(0,2,0) * p
-	glTranslatef(0.0, 2.0, 0.0); // move into position
-	glRotatef(modelRotation, 0, 1, 0); // TODO REMOVE: rotate whole model
+	// TEMP: p' = CTM * T(...) * p
+	glTranslatef(submarinePosition[0], submarinePosition[1], submarinePosition[2]); // move into position
+	// TEMP: p' = CTM * T(...) * R(...) * p
+	glRotatef(submarineRotation, 0, 1, 0); // rotate
 
 	// MAIN BODY
 	drawSubBody();
@@ -197,19 +228,19 @@ void drawSubmarine()
 
 	// SIDE FINS
 	glPushMatrix();
-	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * p
+	// TEMP: p' = CTM * T(...) * R(...) * T(-3.4,0,0) * p
 	glTranslatef(-3.4, 0, 0); // move closer to the front of the sub
 	glPushMatrix();
-	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(90,1,0,0) * p
+	// TEMP: p' = CTM * T(...) * R(...) * T(-3.4,0,0) * R(90,1,0,0) * p
 	glRotatef(90, 1, 0, 0); // rotate to the right
-	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(90,1,0,0) * T(0,0.8,0) p
+	// TEMP: p' = CTM * T(...) * R(...) * T(-3.4,0,0) * R(90,1,0,0) * T(0,0.8,0) p
 	glTranslatef(0, 0.8, 0); // distance from the submarine
 	drawFin(); // right fin
 	glPopMatrix();
 	glPushMatrix();
-	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(-90,1,0,0) * p
+	// TEMP: p' = CTM * T(...) * R(...) * T(-3.4,0,0) * R(-90,1,0,0) * p
 	glRotatef(-90, 1, 0, 0); // rotate to the left
-	// TEMP: p' = CTM * P(0,2,0) * T(-3.4,0,0) * R(-90,1,0,0) * T(0,0.8,0) p
+	// TEMP: p' = CTM * T(...) * R(...) * T(-3.4,0,0) * R(-90,1,0,0) * T(0,0.8,0) p
 	glTranslatef(0, 0.8, 0); // distance from the submarine
 	drawFin(); // left fin
 	glPopMatrix();
@@ -217,14 +248,14 @@ void drawSubmarine()
 
 	// BACK FINS
 	glPushMatrix();
-	// TEMP: p' = CTM * P(0,2,0) * T(4.8,0,0) * p
+	// TEMP: p' = CTM * T(...) * R(...) * T(4.8,0,0) * p
 	glTranslatef(4.8, 0, 0); // move to the back of the sub
 	for (int i = 0; i < 4; i++)
 	{
 		glPushMatrix();
-		// TEMP: p' = CTM * P(0,2,0) * T(4.8,0,0) * R(_,1,0,0) * p
+		// TEMP: p' = CTM * T(...) * R(...) * T(4.8,0,0) * R(_,1,0,0) * p
 		glRotatef(90*i, 1, 0, 0); // rotate
-		// TEMP: p' = CTM * P(0,2,0) * T(4.8,0,0) * R(_,1,0,0) * T(0,0.3,0) * p
+		// TEMP: p' = CTM * T(...) * R(...) * T(4.8,0,0) * R(_,1,0,0) * T(0,0.3,0) * p
 		glTranslatef(0, 0.3, 0); // distance from the submarine
 		drawFin();
 		glPopMatrix();
