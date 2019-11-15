@@ -1,6 +1,5 @@
 freeglut/
 *.dll
-*.vcxproj*
 Debug/
 Release/
 temp-*
