@@ -106,12 +106,12 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 	{
 		if (verticalDirection != -1)
 		{
-			verticalVelocity = static_cast<float>(fmin(1.5, verticalVelocity + 0.3));
+			verticalVelocity = static_cast<float>(fmin(4.5, verticalVelocity + 0.5));
 		}
 	}
 	else if (verticalDirection == -1)
 	{
-		verticalVelocity = static_cast<float>(fmax(-1.5, verticalVelocity - 0.3));
+		verticalVelocity = static_cast<float>(fmax(-4.5, verticalVelocity - 0.5));
 	}
 
 	if (verticalVelocity > 0)
@@ -135,7 +135,9 @@ void Submarine::draw()
 {
 	glEnable(GL_TEXTURE_GEN_S);
 	glEnable(GL_TEXTURE_GEN_T);
-	//glBindTexture(GL_TEXTURE_2D, textureId);
+	
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	glPushMatrix(); // begin full model
 

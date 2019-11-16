@@ -154,6 +154,11 @@ void DrawMeshQM(QuadMesh* qm, int meshSize)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, qm->mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SHININESS, qm->mat_shininess);
 
+	glBindTexture(GL_TEXTURE_2D, qm->texture);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	float textureScale = 1.0F / 50.0F;
+
 	for(int j=0; j < meshSize; j++)
 	{
 		for(int k=0; k < meshSize; k++)
@@ -163,27 +168,35 @@ void DrawMeshQM(QuadMesh* qm, int meshSize)
 			glNormal3f(qm->quads[currentQuad].vertices[0]->normal.x,
 				       qm->quads[currentQuad].vertices[0]->normal.y,
 					   qm->quads[currentQuad].vertices[0]->normal.z);
+			glTexCoord2f(qm->quads[currentQuad].vertices[0]->position.x * textureScale,
+				qm->quads[currentQuad].vertices[0]->position.z * textureScale);
 			glVertex3f(qm->quads[currentQuad].vertices[0]->position.x,
 				       qm->quads[currentQuad].vertices[0]->position.y,
 					   qm->quads[currentQuad].vertices[0]->position.z);
 			
 			glNormal3f(qm->quads[currentQuad].vertices[1]->normal.x,
 				       qm->quads[currentQuad].vertices[1]->normal.y,
-					   qm->quads[currentQuad].vertices[1]->normal.z);			
+					   qm->quads[currentQuad].vertices[1]->normal.z);
+			glTexCoord2f(qm->quads[currentQuad].vertices[1]->position.x * textureScale,
+				qm->quads[currentQuad].vertices[1]->position.z * textureScale);
 			glVertex3f(qm->quads[currentQuad].vertices[1]->position.x,
 				       qm->quads[currentQuad].vertices[1]->position.y,
 					   qm->quads[currentQuad].vertices[1]->position.z);
 			
 			glNormal3f(qm->quads[currentQuad].vertices[2]->normal.x,
 				       qm->quads[currentQuad].vertices[2]->normal.y,
-					   qm->quads[currentQuad].vertices[2]->normal.z);			
+					   qm->quads[currentQuad].vertices[2]->normal.z);
+			glTexCoord2f(qm->quads[currentQuad].vertices[2]->position.x * textureScale,
+				qm->quads[currentQuad].vertices[2]->position.z * textureScale);
 			glVertex3f(qm->quads[currentQuad].vertices[2]->position.x,
 				       qm->quads[currentQuad].vertices[2]->position.y,
 					   qm->quads[currentQuad].vertices[2]->position.z);
 			
 			glNormal3f(qm->quads[currentQuad].vertices[3]->normal.x,
 				       qm->quads[currentQuad].vertices[3]->normal.y,
-					   qm->quads[currentQuad].vertices[3]->normal.z);			
+					   qm->quads[currentQuad].vertices[3]->normal.z);
+			glTexCoord2f(qm->quads[currentQuad].vertices[3]->position.x * textureScale,
+				qm->quads[currentQuad].vertices[3]->position.z * textureScale);
 			glVertex3f(qm->quads[currentQuad].vertices[3]->position.x,
 				       qm->quads[currentQuad].vertices[3]->position.y,
 					   qm->quads[currentQuad].vertices[3]->position.z);

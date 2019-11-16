@@ -4,3 +4,4 @@ glew/
 Debug/
 Release/
 temp-*
+*.psd

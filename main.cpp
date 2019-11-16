@@ -25,9 +25,9 @@ const int viewportWidth = 650;
 const int viewportHeight = 500;
 
 // Light properties
-static GLfloat light_position0[] = { -6.0F, 300.0F, 0.0F, 1.0F };
+static GLfloat light_position0[] = { -6.0F, 50.0F, 0.0F, 1.0F };
 static GLfloat light_position1[] = { 6.0F, 12.0F, 0.0F, 1.0F };
-static GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
+static GLfloat light_diffuse[] = { 0.4, 0.4, 0.4, 1.0 };
 static GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 static GLfloat light_ambient[] = { 0.2F, 0.2F, 0.2F, 1.0F };
 
@@ -217,6 +217,22 @@ void init(int w, int h)
 
 	glEnable(GL_POLYGON_SMOOTH);
 
+	
+	glEnable(GL_TEXTURE_2D); // enable texture mapping
+
+	unsigned int meshTexture;
+	glGenTextures(1, &meshTexture);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glBindTexture(GL_TEXTURE_2D, meshTexture);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // GL_LINEAR_MIPMAP_NEAREST
+	int width1, height1, nrChannels1;
+	unsigned char* data = stbi_load("ocean-floor.png", &width1, &height1, &nrChannels1, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width1, height1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	//gluBuild2DMipmaps();
+	
 	// Set up ground quad mesh
 	meshOrigin = NewVector3D(-100.0f, 0.0f, 100.0f);
 	const Vector3D dir1v = NewVector3D(1.0f, 0.0f, 0.0f);
@@ -229,10 +245,11 @@ void init(int w, int h)
 		200.0,
 		dir1v,
 		dir2v);
+	groundMesh.texture = meshTexture; // assign texture
 
 	SetMaterialQM(&groundMesh,
 		NewVector3D(0.05f, 0.05f, 0.05f), // ambient
-		NewVector3D(0.1f, 0.6f, 0.1f), // diffuse
+		NewVector3D(1.0f, 1.0f, 1.0f), // diffuse
 		NewVector3D(0.04f, 0.04f, 0.04f), // specular
 		0.5f); // shininess
 
@@ -288,29 +305,25 @@ void init(int w, int h)
 	//Set(&BBox.min, -8.0f, 0.0, -8.0);
 	//Set(&BBox.max, 8.0f, 6.0,  8.0);
 
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("sub-metal.png", &width, &height, &nrChannels, 0);
-
-	glEnable(GL_TEXTURE_2D); // enable cube texture mapping
 
 	unsigned int texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
+	int width, height, nrChannels;
+	unsigned char* subTextureData = stbi_load("sub-metal.png", &width, &height, &nrChannels, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, subTextureData);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	GLfloat planes[] = { 0.0, 0.0, 1.0, 0.0 };
-	GLfloat planet[] = { 0.0, 1.0, 0.0, 0.0 };
-
+	
+	// TODO change the following to a cylindrical or cube texture mapping
+	GLfloat planes[] = { 1.0, 0.0, 0.0, 0.0 };
+	GLfloat planet[] = { 0.0, 0.0, 1.0, 0.0 };
 	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 	glTexGenfv(GL_S, GL_OBJECT_PLANE, planes);
 	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 	glTexGenfv(GL_T, GL_OBJECT_PLANE, planet);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	
 	GLUquadric *qobj = gluNewQuadric();
 	gluQuadricTexture(qobj, GL_TRUE);
