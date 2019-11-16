@@ -1,4 +1,5 @@
 freeglut/
+glew/
 *.dll
 Debug/
 Release/
