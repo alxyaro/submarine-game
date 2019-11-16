@@ -23,6 +23,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="perlin.c" />
     <ClCompile Include="QuadMesh.c" />
+    <ClCompile Include="Submarine.cpp" />
     <ClCompile Include="Vector3D.c" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="perlin.h" />
     <ClInclude Include="QuadMesh.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Submarine.h" />
     <ClInclude Include="Vector3D.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
