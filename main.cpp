@@ -48,6 +48,7 @@ Vector3D meshOrigin;
 QuadMesh groundMesh;
 
 Submarine* submarine;
+AISubmarine* enemySubs;
 
 // prototypes
 bool keyDown(int);
@@ -57,7 +58,9 @@ void init(int, int);
 void resize(int, int);
 void updateCamera(void);
 void mainLoop(int);
-bool withinGroundMesh(BoundingBox,bool);
+Vector3 getHighestGroundPosition(BoundingBox, bool);
+bool aboveGroundMesh(BoundingBox);
+bool withinGroundMeshBounds(BoundingBox);
 void display(void);
 
 void keyboard(unsigned char,int,int);
@@ -297,7 +300,7 @@ void mainLoop(int x)
 		vertical -= 1;
 
 	submarine->tick(power, rotation, vertical, deltaTime);
-	if (!withinGroundMesh(submarine->getBoundingBox(), false))
+	if (!withinGroundMeshBounds(submarine->getBoundingBox()) || !aboveGroundMesh(submarine->getBoundingBox()))
 		submarine->reset();
 	
 	//printf("below mesh = %i\n", belowMesh(submarine->getBoundingBox()));
@@ -314,7 +317,7 @@ Vector3D getMeshVertex(int meshX, int meshZ)
 	int index = (-meshZ) * (meshResolution + 1) + meshX;
 	return groundMesh.vertices[index].position;
 }
-bool withinGroundMesh(BoundingBox bbox, bool justVisualize)
+Vector3 getHighestGroundPosition(BoundingBox bbox, bool considerChildren)
 {
 	Vector3* lowerCorner = bbox.getLowerCorner();
 	Vector3* upperCorner = bbox.getUpperCorner();
@@ -331,29 +334,22 @@ bool withinGroundMesh(BoundingBox bbox, bool justVisualize)
 	upperCorner->x *= pct;
 	upperCorner->z *= pct;
 
-	//printf("%f,%f\n", floor(lowerCorner->x), floor(lowerCorner->z));
-
-	if (justVisualize)
-	{
-		glDisable(GL_LIGHTING);
-		glBegin(GL_LINES);
-	}
-
 	int lowerX = ceil(lowerCorner->x);
 	int upperX = floor(upperCorner->x);
 	int lowerZ = ceil(lowerCorner->z);
 	int upperZ = floor(upperCorner->z);
 
+	Vector3 result(0, INT_MIN, 0);
 	bool averageOut = false;
-	Vector3 average(0,0,0);
 	int averageCount = 0;
+	
 	if (lowerX > upperX)
 	{
 		lowerX -= 1;
 		upperX += 1;
 		averageOut = true;
 	}
-	
+
 	if (lowerZ > upperZ)
 	{
 		lowerZ -= 1;
@@ -366,66 +362,82 @@ bool withinGroundMesh(BoundingBox bbox, bool justVisualize)
 		for (int z = lowerZ; z <= upperZ; z++)
 		{
 			if (x < 0 || x > meshResolution || z < -meshResolution || z > 0)
-			{
-				if (justVisualize)
-					continue; 
-				else
-					return false; // outside mesh boundary
-			}
+				continue;
 
 			Vector3D pos = getMeshVertex(x, z);
 
-			//printf("%f,%f = %f,%f\n", floor(bbox.getLowerCorner()->x), floor(bbox.getLowerCorner()->z), pos.x, pos.z);
-
 			if (averageOut)
 			{
-				average.x += pos.x;
-				average.y += pos.y;
-				average.z += pos.z;
+				if (averageCount == 0)
+					result.y = 0;
+				result.x += pos.x;
+				result.y += pos.y;
+				result.z += pos.z;
 				averageCount++;
 				continue;
 			}
 
-			if (justVisualize)
+			if (pos.y > result.y)
 			{
-				if (bbox.getLowerY() <= pos.y)
-					glColor3f(1, 1, 0);
-				else
-					glColor3f(0, 1, 0);
-				glVertex3f(pos.x, pos.y, pos.z);
-				glVertex3f(pos.x, bbox.getLowerY(), pos.z);
+				result.x = pos.x;
+				result.y = pos.y;
+				result.z = pos.z;
 			}
-			else if (bbox.getLowerY() < pos.y)
-				return false;
 		}
 	}
 
 	if (averageOut && averageCount > 0)
 	{
-		average.y /= averageCount;
-		if (justVisualize)
-		{
-			average.x /= averageCount;
-			average.z /= averageCount;
-			if (bbox.getLowerY() <= average.y)
-				glColor3f(1, 1, 0);
-			else
-				glColor3f(0, 1, 0);
-			glVertex3f(average.x, average.y, average.z);
-			glVertex3f(average.x, bbox.getLowerY(), average.z);
-		}
-		else if (bbox.getLowerY() < average.y)
-			return false;
+		result.x /= averageCount;
+		result.y /= averageCount;
+		result.z /= averageCount;
 	}
 
-	if (justVisualize)
+	if (considerChildren && bbox.child != nullptr)
 	{
-		glEnd();
-		glEnable(GL_LIGHTING);
+		Vector3 other = getHighestGroundPosition(*bbox.child, true);
+		return other.y > result.y ? other : result;
 	}
+	return result;
+}
+
+bool withinGroundMeshBounds(BoundingBox bbox)
+{
+	Vector3 lowerCorner = *bbox.getLowerCorner();
+	Vector3 upperCorner = *bbox.getUpperCorner();
+
+	Vector3 meshLowerCorner(meshOrigin.x, 0, meshOrigin.z - meshSize);
+	Vector3 meshUpperCorner(meshOrigin.x + meshSize, 0, meshOrigin.z);
+	
+	if (lowerCorner.x < meshLowerCorner.x || upperCorner.x > meshUpperCorner.x || lowerCorner.z < meshLowerCorner.z || upperCorner.z > meshUpperCorner.z)
+		return false;
 	if (bbox.child != nullptr)
-		return withinGroundMesh(*bbox.child, justVisualize);
+		return withinGroundMeshBounds(*bbox.child);
 	return true;
+}
+
+bool aboveGroundMesh(BoundingBox bbox)
+{
+	return bbox.getLowerY() > getHighestGroundPosition(bbox, true).y;
+}
+
+void visualizeGroundBoundary(BoundingBox bbox)
+{
+	Vector3 pos = getHighestGroundPosition(bbox, false);
+	glDisable(GL_LIGHTING);
+	glBegin(GL_LINES);
+
+	if (bbox.getLowerY() <= pos.y)
+		glColor3f(1, 1, 0);
+	else
+		glColor3f(0, 1, 0);
+	glVertex3f(pos.x, pos.y, pos.z);
+	glVertex3f(pos.x, bbox.getLowerY(), pos.z);
+
+	glEnd();
+	glEnable(GL_LIGHTING);
+	if (bbox.child != nullptr)
+		visualizeGroundBoundary(*bbox.child);
 }
 
 void display()
@@ -444,7 +456,7 @@ void display()
 	if (debugMode)
 	{
 		submarine->getBoundingBox().debugDraw();
-		withinGroundMesh(submarine->getBoundingBox(), true);
+		visualizeGroundBoundary(submarine->getBoundingBox());
 	}
 
 	DrawMeshQM(&groundMesh, meshResolution, debugMode); // draw ground mesh

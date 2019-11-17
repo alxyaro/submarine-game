@@ -9,15 +9,15 @@ class Submarine
 {
 public:
 	Submarine(unsigned int, GLUquadricObj*);
-	void reset();
+	virtual void reset();
 	void tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime);
 	void draw();
 	Vector3 getPosition() const;
-	void setPosition(float, float, float);
-	void rotate(float);
+	virtual void setPosition(float, float, float);
+	virtual void rotate(float);
 	void setFast();
 	BoundingBox getBoundingBox();
-	long int ticksLived;
+	unsigned long int ticksLived;
 private:
 	unsigned int textureId;
 	GLUquadricObj* qobj;
@@ -42,5 +42,19 @@ private:
 	void drawSubTower();
 	void drawFin();
 	void drawSubPropeller();
+};
+
+class AISubmarine : public Submarine
+{
+public:
+	bool initialized;
+	void reset() override;
+	void setPosition(float, float, float) override;
+	void rotate(float) override;
+private:
+	short powerDirection;
+	short rotationDirection;
+	short verticalDirection;
+	unsigned int recalcCooldown;
 };
 
