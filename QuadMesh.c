@@ -145,7 +145,7 @@ bool InitMeshQM(QuadMesh* qm, int meshSize, Vector3D origin, double meshLength, 
 }
 
 // Draw the mesh by drawing all quads.
-void DrawMeshQM(QuadMesh* qm, int meshSize)
+void DrawMeshQM(QuadMesh* qm, int meshSize, bool debug)
 {
 	int currentQuad=0;
 
@@ -157,13 +157,19 @@ void DrawMeshQM(QuadMesh* qm, int meshSize)
 	glBindTexture(GL_TEXTURE_2D, qm->texture);
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+	if (debug)
+	{
+		glDisable(GL_LIGHTING);
+		glColor3f(0.5f, 0.5f, 0.5f);
+	}
+
 	float textureScale = 1.0F / 50.0F;
 	
 	for(int j=0; j < meshSize; j++)
 	{
 		for(int k=0; k < meshSize; k++)
 		{
-			glBegin(GL_QUADS);
+			glBegin(debug ? GL_LINE_LOOP : GL_QUADS);
 			
 			glNormal3f(qm->quads[currentQuad].vertices[0]->normal.x,
 				       qm->quads[currentQuad].vertices[0]->normal.y,
@@ -204,6 +210,11 @@ void DrawMeshQM(QuadMesh* qm, int meshSize)
 			glEnd();
 			currentQuad++;
 		}
+	}
+
+	if (debug)
+	{
+		glEnable(GL_LIGHTING);
 	}
 }
 

@@ -14,9 +14,7 @@ Submarine::Submarine(unsigned int textureId, GLUquadricObj* qobj)
 
 void Submarine::reset()
 {
-	submarinePosition->x = 0;
-	submarinePosition->y = 15;
-	submarinePosition->z = 0;
+	setPosition(0, 15, 0);
 
 	this->boundingBox = new BoundingBox(new Vector3(0, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
 	BoundingBox* lastBB = boundingBox;
@@ -36,15 +34,19 @@ void Submarine::reset()
 	boundingBox->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z);
 	
 	submarineRotation = 0;
+	rotate(-90);
 
 	propellerSpeed = 0;
 	horizontalVelocity = 0;
 	rotationalVelocity = 0;
 	verticalVelocity = 0;
+
+	ticksLived = 0;
 }
 
 void Submarine::tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime)
 {
+	ticksLived++;
 	if (powerDirection == 1)
 	{
 		propellerSpeed += propellerAcceleration * deltaTime;
@@ -117,8 +119,7 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 
 	if (rotationalVelocity != 0)
 	{
-		boundingBox->rotate(submarinePosition, -rotationalVelocity * PI / 180);
-		submarineRotation = fmod(submarineRotation - rotationalVelocity, 360);
+		rotate(-rotationalVelocity);
 	}
 	// end rotation
 
@@ -153,17 +154,36 @@ Vector3 Submarine::getPosition() const
 	return *submarinePosition;
 }
 
+void Submarine::setPosition(float x, float y, float z)
+{
+	submarinePosition->x = x;
+	submarinePosition->y = y;
+	submarinePosition->z = z;
+}
+
+void Submarine::rotate(float angleDeg)
+{
+	submarineRotation = fmod(submarineRotation + angleDeg, 360);
+	boundingBox->rotate(submarinePosition, angleDeg * PI / 180);
+}
+
+
 void Submarine::setFast()
 {
 	terminalPropellerSpeed = 3;
 	terminalVelocity = 10;
 }
 
+BoundingBox Submarine::getBoundingBox()
+{
+	return *boundingBox;
+}
+
+
 
 
 void Submarine::draw()
 {
-	boundingBox->debugDraw();
 	glEnable(GL_TEXTURE_GEN_S);
 	glEnable(GL_TEXTURE_GEN_T);
 	

@@ -20,6 +20,5 @@ public:
 	float x;
 	float y;
 	float z;
-	void rotateAboutYAxis(Vector2 origin, float angle);
 };
 

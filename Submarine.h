@@ -13,7 +13,11 @@ public:
 	void tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime);
 	void draw();
 	Vector3 getPosition() const;
+	void setPosition(float, float, float);
+	void rotate(float);
 	void setFast();
+	BoundingBox getBoundingBox();
+	long int ticksLived;
 private:
 	unsigned int textureId;
 	GLUquadricObj* qobj;

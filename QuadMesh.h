@@ -40,6 +40,6 @@ QuadMesh NewQuadMesh(int maxMeshSize);
 void SetMaterialQM(QuadMesh* qm, Vector3D ambient, Vector3D diffuse, Vector3D specular, double shininess);
 bool CreateMemoryQM(QuadMesh* qm);
 bool InitMeshQM(QuadMesh* qm, int meshSize, Vector3D origin, double meshLength, double meshWidth, Vector3D dir1, Vector3D dir2);
-void DrawMeshQM(QuadMesh* qm, int meshSize);
+void DrawMeshQM(QuadMesh* qm, int meshSize, bool debug);
 void FreeMemoryQM(QuadMesh* qm);
 void ComputeNormalsQM(QuadMesh* qm);

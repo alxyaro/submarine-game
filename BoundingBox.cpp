@@ -12,6 +12,12 @@ BoundingBox::BoundingBox(Vector3* position, Vector3* offset, Vector3* size)
 	this->size = size;
 }
 
+Vector3 BoundingBox::getPosition()
+{
+	return *position;
+}
+
+
 void BoundingBox::setPosition(float x, float y, float z)
 {
 	shift(x - position->x, y - position->y, z - position->z);
@@ -109,3 +115,25 @@ void BoundingBox::debugDraw()
 		child->debugDraw();
 }
 
+float BoundingBox::getLowerY()
+{
+	return position->y + offset->y;
+}
+
+Vector3* BoundingBox::getLowerCorner()
+{
+	return new Vector3(
+		position->x + offset->x,
+		position->y + offset->y,
+		position->z + offset->z
+	);
+}
+
+Vector3* BoundingBox::getUpperCorner()
+{
+	return new Vector3(
+		position->x + offset->x + size->x,
+		position->y + offset->y + size->y,
+		position->z + offset->z + size->z
+	);
+}
