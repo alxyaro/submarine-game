@@ -13,6 +13,7 @@ public:
 	void tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime);
 	void draw();
 	Vector3 getPosition() const;
+	void setFast();
 private:
 	unsigned int textureId;
 	GLUquadricObj* qobj;
@@ -23,8 +24,9 @@ private:
 	// some rough physics
 	const float propellerAcceleration = 0.8f;
 	const float propellerDeceleration = 0.8f;
-	float propellerSpeedPct = 0;
-	const float terminalVelocity = 10;
+	float propellerSpeed = 0;
+	float terminalPropellerSpeed = 1;
+	float terminalVelocity = 4;
 	const float waterDrag = 1; // aka deceleration
 	float horizontalVelocity = 0;
 	float rotationalVelocity = 0;

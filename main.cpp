@@ -338,6 +338,7 @@ void init(int w, int h)
 	gluQuadricDrawStyle(qobj, GLU_FILL);
 
 	submarine = new Submarine(texture, qobj);
+	submarine->setFast();
 }
 
 void resize(int width, int height)
@@ -359,7 +360,7 @@ void updateCamera()
 	glLoadIdentity();
 	Vector3 position = submarine->getPosition();
 	gluLookAt(
-		position.x, position.y+10, position.z+10,
+		position.x, position.y+50, position.z+50,
 		position.x, position.y, position.z,
 		0, 1, 0
 	); // CTM = I * V

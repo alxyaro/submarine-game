@@ -37,7 +37,7 @@ void Submarine::reset()
 	
 	submarineRotation = 0;
 
-	propellerSpeedPct = 0;
+	propellerSpeed = 0;
 	horizontalVelocity = 0;
 	rotationalVelocity = 0;
 	verticalVelocity = 0;
@@ -47,36 +47,36 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 {
 	if (powerDirection == 1)
 	{
-		propellerSpeedPct += propellerAcceleration * deltaTime;
-		if (propellerSpeedPct > 1)
-			propellerSpeedPct = 1;
+		propellerSpeed += propellerAcceleration * deltaTime;
+		if (propellerSpeed > terminalPropellerSpeed)
+			propellerSpeed = terminalPropellerSpeed;
 	}
 	else if (powerDirection == -1)
 	{
-		propellerSpeedPct -= propellerAcceleration * deltaTime;
-		if (propellerSpeedPct < -1)
-			propellerSpeedPct = -1;
+		propellerSpeed -= propellerAcceleration * deltaTime;
+		if (propellerSpeed < -terminalPropellerSpeed)
+			propellerSpeed = -terminalPropellerSpeed;
 	}
-	else if (propellerSpeedPct != 0)
+	else if (propellerSpeed != 0)
 	{
 		const float amount = propellerDeceleration * deltaTime;
-		if (propellerSpeedPct > 0)
+		if (propellerSpeed > 0)
 		{
-			propellerSpeedPct -= amount;
-			if (propellerSpeedPct < 0)
-				propellerSpeedPct = 0;
+			propellerSpeed -= amount;
+			if (propellerSpeed < 0)
+				propellerSpeed = 0;
 		}
 		else
 		{
-			propellerSpeedPct += amount;
-			if (propellerSpeedPct > 0)
-				propellerSpeedPct = 0;
+			propellerSpeed += amount;
+			if (propellerSpeed > 0)
+				propellerSpeed = 0;
 		}
 	}
 
-	propellerRotation = static_cast<float>(fmod(propellerRotation + propellerSpeedPct * 7.0, 360));
+	propellerRotation = static_cast<float>(fmod(propellerRotation + propellerSpeed * 7.0, 360));
 
-	horizontalVelocity += propellerSpeedPct;
+	horizontalVelocity += propellerSpeed/5;
 	if (horizontalVelocity > terminalVelocity)
 		horizontalVelocity = terminalVelocity;
 	if (horizontalVelocity < -terminalVelocity)
@@ -152,6 +152,13 @@ Vector3 Submarine::getPosition() const
 {
 	return *submarinePosition;
 }
+
+void Submarine::setFast()
+{
+	terminalPropellerSpeed = 3;
+	terminalVelocity = 10;
+}
+
 
 
 void Submarine::draw()
