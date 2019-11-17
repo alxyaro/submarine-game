@@ -372,13 +372,6 @@ void display()
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-	
-	// stationary cube
-	glPushMatrix();
-	glTranslatef(6,1.5,0);
-	glutSolidCube(3);
-	glPopMatrix();
-	// end stationary cube
 
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position0);
 	
