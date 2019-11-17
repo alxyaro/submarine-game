@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <GL/glew.h>
 #include <GL/glut.h>
 extern "C" {
 #include "Vector3D.h"
@@ -69,11 +70,15 @@ void reset(void)
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
+	
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(viewportWidth, viewportHeight);
 	glutInitWindowPosition(0,0);
 	glutCreateWindow("Assignment 1");
 
+	glewExperimental = TRUE;
+	glewInit();
+	
 	init(viewportWidth, viewportHeight);
 
 	glutReshapeFunc(resize);
@@ -219,19 +224,19 @@ void init(int w, int h)
 
 	
 	glEnable(GL_TEXTURE_2D); // enable texture mapping
-
+	
 	unsigned int meshTexture;
 	glGenTextures(1, &meshTexture);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glBindTexture(GL_TEXTURE_2D, meshTexture);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // GL_LINEAR_MIPMAP_NEAREST
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); // GL_LINEAR_MIPMAP_NEAREST
 	int width1, height1, nrChannels1;
 	unsigned char* data = stbi_load("ocean-floor.png", &width1, &height1, &nrChannels1, 0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width1, height1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	//gluBuild2DMipmaps();
+	glGenerateMipmap(GL_TEXTURE_2D);
 	
 	// Set up ground quad mesh
 	meshOrigin = NewVector3D(-100.0f, 0.0f, 100.0f);
@@ -309,13 +314,14 @@ void init(int w, int h)
 	unsigned int texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	int width, height, nrChannels;
 	unsigned char* subTextureData = stbi_load("sub-metal.png", &width, &height, &nrChannels, 0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, subTextureData);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	
 	// TODO change the following to a cylindrical or cube texture mapping
 	GLfloat planes[] = { 1.0, 0.0, 0.0, 0.0 };
