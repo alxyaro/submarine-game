@@ -7,16 +7,34 @@ Submarine::Submarine(unsigned int textureId, GLUquadricObj* qobj)
 {
 	this->textureId = textureId;
 	this->qobj = qobj;
-	this->submarinePosition = NewVector3D(0, 0, 0);
+	this->submarinePosition = new Vector3(0, 0, 0);
+
 	reset();
 }
 
 void Submarine::reset()
 {
-	submarinePosition.x = 0;
-	submarinePosition.y = 15;
-	submarinePosition.z = 0;
+	submarinePosition->x = 0;
+	submarinePosition->y = 15;
+	submarinePosition->z = 0;
 
+	this->boundingBox = new BoundingBox(new Vector3(0, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
+	BoundingBox* lastBB = boundingBox;
+	for (int i = 0; i < 4; i++)
+	{
+		BoundingBox* newBB = new BoundingBox(new Vector3(0 - i * 1.5, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
+		lastBB->child = newBB;
+		lastBB = newBB;
+	}
+	for (int i = 0; i < 4; i++)
+	{
+		BoundingBox* newBB = new BoundingBox(new Vector3(0 + i * 1.6, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
+		lastBB->child = newBB;
+		lastBB = newBB;
+	}
+	
+	boundingBox->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z);
+	
 	submarineRotation = 0;
 
 	propellerSpeedPct = 0;
@@ -75,8 +93,8 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 	if (movementDelta != 0)
 	{
 		const double subRotationRadians = submarineRotation * PI / 180.0;
-		submarinePosition.x += movementDelta * cos(subRotationRadians);
-		submarinePosition.z -= movementDelta * sin(subRotationRadians);
+		submarinePosition->x += movementDelta * cos(subRotationRadians);
+		submarinePosition->z -= movementDelta * sin(subRotationRadians);
 	}
 
 	// rotation
@@ -98,7 +116,10 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 		rotationalVelocity = static_cast<float>(fmin(0, rotationalVelocity + 0.1));
 
 	if (rotationalVelocity != 0)
+	{
+		boundingBox->rotate(submarinePosition, -rotationalVelocity * PI / 180);
 		submarineRotation = fmod(submarineRotation - rotationalVelocity, 360);
+	}
 	// end rotation
 
 	// vertical movement
@@ -120,19 +141,22 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 		verticalVelocity = static_cast<float>(fmin(0, verticalVelocity + 0.1));
 
 	if (verticalVelocity != 0)
-		submarinePosition.y += verticalVelocity / 70;
+		submarinePosition->y += verticalVelocity / 70;
 	// end vertical movement
+
+	boundingBox->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z); // update bbox
 }
 
 
-Vector3D Submarine::getPosition() const
+Vector3 Submarine::getPosition() const
 {
-	return submarinePosition;
+	return *submarinePosition;
 }
 
 
 void Submarine::draw()
 {
+	boundingBox->debugDraw();
 	glEnable(GL_TEXTURE_GEN_S);
 	glEnable(GL_TEXTURE_GEN_T);
 	
@@ -143,7 +167,7 @@ void Submarine::draw()
 
 	// POSITION/ROTATION
 	// TEMP: p' = CTM * T(...) * p
-	glTranslatef(submarinePosition.x, submarinePosition.y, submarinePosition.z); // move into position
+	glTranslatef(submarinePosition->x, submarinePosition->y, submarinePosition->z); // move into position
 	// TEMP: p' = CTM * T(...) * R(...) * p
 	glRotatef(submarineRotation, 0, 1, 0); // rotate
 

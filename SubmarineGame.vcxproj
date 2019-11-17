@@ -19,19 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BoundingBox.cpp" />
     <ClCompile Include="CubeMesh.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="perlin.c" />
     <ClCompile Include="QuadMesh.c" />
     <ClCompile Include="Submarine.cpp" />
+    <ClCompile Include="Vector.cpp" />
     <ClCompile Include="Vector3D.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundingBox.h" />
     <ClInclude Include="CubeMesh.h" />
     <ClInclude Include="perlin.h" />
     <ClInclude Include="QuadMesh.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Submarine.h" />
+    <ClInclude Include="Vector.h" />
     <ClInclude Include="Vector3D.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

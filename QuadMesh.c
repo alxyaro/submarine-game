@@ -158,7 +158,7 @@ void DrawMeshQM(QuadMesh* qm, int meshSize)
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	float textureScale = 1.0F / 50.0F;
-
+	
 	for(int j=0; j < meshSize; j++)
 	{
 		for(int k=0; k < meshSize; k++)

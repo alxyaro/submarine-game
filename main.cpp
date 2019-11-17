@@ -2,6 +2,8 @@
 #include <cstring>
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include "BoundingBox.h"
+
 extern "C" {
 #include "Vector3D.h"
 #include "QuadMesh.h"
@@ -355,9 +357,9 @@ void updateCamera()
 {
 	// TODO modes
 	glLoadIdentity();
-	Vector3D position = submarine->getPosition();
+	Vector3 position = submarine->getPosition();
 	gluLookAt(
-		position.x, position.y+50, position.z+50,
+		position.x, position.y+10, position.z+10,
 		position.x, position.y, position.z,
 		0, 1, 0
 	); // CTM = I * V
