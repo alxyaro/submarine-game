@@ -262,6 +262,7 @@ void init(int w, int h)
 		new AISubmarine(texture, qobj)
 	};
 	(enemySubs+0)->reset();
+	srand(234);
 }
 
 void resize(int width, int height)
@@ -287,6 +288,11 @@ void updateCamera()
 		position.x, position.y, position.z,
 		0, 1, 0
 	); // CTM = I * V
+}
+
+float getSubTurnChance(Vector3 position, Vector3 velocity)
+{
+	return 0;
 }
 
 void mainLoop(int x)
@@ -327,7 +333,46 @@ void mainLoop(int x)
 			enemySub->setPosition(x, getHighestGroundPosition(enemySub->getBoundingBox(), true).y+10, z);
 			enemySub->initialized = true;
 		}
-		enemySub->rotate(2);
+		if (enemySub->aiCooldown > 0) enemySub->aiCooldown--;
+		else
+		{
+			if (enemySub->powerCalcCooldown > 0) enemySub->powerCalcCooldown--;
+			else
+			{
+				if (enemySub->powerDirection != 0 && rand() % 100 == 0)
+				{
+					enemySub->powerDirection = 0;
+					enemySub->powerCalcCooldown = 10 + rand() % 90; // 200-2000ms
+				}
+				else
+				{
+					enemySub->powerDirection = 1;
+				}
+			}
+			BoundingBox bbox = enemySub->getBoundingBox();
+			Vector3 belowSurface = getHighestGroundPosition(bbox, true);
+			Vector3 aheadSurface = getHighestGroundPosition(*enemySub->forwardViewBb, true);
+			float idealHeight = fmax(belowSurface.y, aheadSurface.y) + 10;
+
+			float idealDiff = idealHeight - bbox.getLowerY();
+			if (idealDiff > 0.5)
+			{
+				enemySub->verticalDirection = 1;
+			}
+			else if (idealDiff < -2)
+			{
+				enemySub->verticalDirection = -1;
+			}
+			else
+			{
+				enemySub->verticalDirection = 0;
+			}
+			
+			enemySub->aiCooldown = 5 + rand() % 15;
+		}
+		enemySub->tick(enemySub->powerDirection, enemySub->rotationDirection, enemySub->verticalDirection, deltaTime);
+		if (!withinGroundMeshBounds(enemySub->getBoundingBox()) || !aboveGroundMesh(enemySub->getBoundingBox()))
+			enemySub->reset();
 	}
 	
 	//printf("below mesh = %i\n", belowMesh(submarine->getBoundingBox()));
@@ -346,25 +391,24 @@ Vector3D getMeshVertex(int meshX, int meshZ)
 }
 Vector3 getHighestGroundPosition(BoundingBox bbox, bool considerChildren)
 {
-	Vector3* lowerCorner = bbox.getLowerCorner();
-	Vector3* upperCorner = bbox.getUpperCorner();
+	bounds bbounds = bbox.getBounds();
 
-	lowerCorner->x -= meshOrigin.x;
-	lowerCorner->z -= meshOrigin.z;
-	upperCorner->x -= meshOrigin.x;
-	upperCorner->z -= meshOrigin.z;
+	bbounds.x1 -= meshOrigin.x;
+	bbounds.z1 -= meshOrigin.z;
+	bbounds.x2 -= meshOrigin.x;
+	bbounds.z2 -= meshOrigin.z;
 
 	float pct = meshResolution / meshSize;
 
-	lowerCorner->x *= pct;
-	lowerCorner->z *= pct;
-	upperCorner->x *= pct;
-	upperCorner->z *= pct;
+	bbounds.x1 *= pct;
+	bbounds.z1 *= pct;
+	bbounds.x2 *= pct;
+	bbounds.z2 *= pct;
 
-	int lowerX = ceil(lowerCorner->x);
-	int upperX = floor(upperCorner->x);
-	int lowerZ = ceil(lowerCorner->z);
-	int upperZ = floor(upperCorner->z);
+	int lowerX = ceil(bbounds.x1);
+	int upperX = floor(bbounds.x2);
+	int lowerZ = ceil(bbounds.z1);
+	int upperZ = floor(bbounds.z2);
 
 	Vector3 result(0, INT_MIN, 0);
 	bool averageOut = false;
@@ -430,13 +474,12 @@ Vector3 getHighestGroundPosition(BoundingBox bbox, bool considerChildren)
 
 bool withinGroundMeshBounds(BoundingBox bbox)
 {
-	Vector3 lowerCorner = *bbox.getLowerCorner();
-	Vector3 upperCorner = *bbox.getUpperCorner();
+	bounds bbounds = bbox.getBounds();
 
 	Vector3 meshLowerCorner(meshOrigin.x, 0, meshOrigin.z - meshSize);
 	Vector3 meshUpperCorner(meshOrigin.x + meshSize, 0, meshOrigin.z);
 	
-	if (lowerCorner.x < meshLowerCorner.x || upperCorner.x > meshUpperCorner.x || lowerCorner.z < meshLowerCorner.z || upperCorner.z > meshUpperCorner.z)
+	if (bbounds.x1 < meshLowerCorner.x || bbounds.x2 > meshUpperCorner.x || bbounds.z1 < meshLowerCorner.z || bbounds.z2 > meshUpperCorner.z)
 		return false;
 	if (bbox.child != nullptr)
 		return withinGroundMeshBounds(*bbox.child);

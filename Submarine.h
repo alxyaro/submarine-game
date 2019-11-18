@@ -13,11 +13,14 @@ public:
 	void tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime);
 	void draw();
 	Vector3 getPosition() const;
-	virtual void setPosition(float, float, float);
+	Vector3 getVelocity(float) const;
+	void setPosition(float, float, float);
 	virtual void rotate(float);
 	void setFast();
 	BoundingBox getBoundingBox();
 	unsigned long int ticksLived;
+protected:
+	virtual void syncBb();
 private:
 	unsigned int textureId;
 	GLUquadricObj* qobj;
@@ -38,7 +41,6 @@ private:
 
 	BoundingBox* boundingBox;
 
-	void syncBb();
 	void drawSubBody();
 	void drawSubTower();
 	void drawFin();
@@ -51,12 +53,14 @@ public:
 	AISubmarine(unsigned int, GLUquadricObj*);
 	bool initialized;
 	void reset() override;
-	void setPosition(float, float, float) override;
 	void rotate(float) override;
 	BoundingBox* forwardViewBb;
 	short powerDirection;
 	short rotationDirection;
 	short verticalDirection;
-	unsigned int recalcCooldown;
+	unsigned short powerCalcCooldown;
+	unsigned int aiCooldown;
+protected:
+	void syncBb() override;
 };
 

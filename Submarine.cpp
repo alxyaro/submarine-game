@@ -16,17 +16,17 @@ void Submarine::reset()
 	submarinePosition->y = 0;
 	submarinePosition->z = 0;
 	
-	this->boundingBox = new BoundingBox(new Vector3(0, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
+	this->boundingBox = new BoundingBox(new Vector3(0, 0, 0), 1.4);
 	BoundingBox* lastBB = boundingBox;
 	for (int i = 0; i < 4; i++)
 	{
-		BoundingBox* newBB = new BoundingBox(new Vector3(0 - i * 1.5, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
+		BoundingBox* newBB = new BoundingBox(new Vector3(0, 0, 0), new Vector3(-i * 1.5, 0, 0), 1.4);
 		lastBB->child = newBB;
 		lastBB = newBB;
 	}
 	for (int i = 0; i < 4; i++)
 	{
-		BoundingBox* newBB = new BoundingBox(new Vector3(0 + i * 1.6, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
+		BoundingBox* newBB = new BoundingBox(new Vector3(0, 0, 0), new Vector3(i * 1.6, 0, 0), 1.4);
 		lastBB->child = newBB;
 		lastBB = newBB;
 	}
@@ -90,15 +90,6 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 	else if (horizontalVelocity < 0)
 		horizontalVelocity = static_cast<float>(fmin(0, horizontalVelocity + waterDrag * deltaTime));
 
-	const float movementDelta = -1 * horizontalVelocity * deltaTime;
-
-	if (movementDelta != 0)
-	{
-		const double subRotationRadians = submarineRotation * PI / 180.0;
-		submarinePosition->x += movementDelta * cos(subRotationRadians);
-		submarinePosition->z -= movementDelta * sin(subRotationRadians);
-	}
-
 	// rotation
 	if (rotationDirection == 1)
 	{
@@ -141,9 +132,16 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 	else if (verticalVelocity < 0)
 		verticalVelocity = static_cast<float>(fmin(0, verticalVelocity + 0.1));
 
-	if (verticalVelocity != 0)
-		submarinePosition->y += verticalVelocity / 70;
 	// end vertical movement
+
+	Vector3 velocity = getVelocity(deltaTime);
+	if (!velocity.isZero())
+	{
+		submarinePosition->x += velocity.x;
+		submarinePosition->y += velocity.y;
+		submarinePosition->z += velocity.z;
+	}
+
 
 	syncBb();
 }
@@ -153,6 +151,17 @@ Vector3 Submarine::getPosition() const
 {
 	return *submarinePosition;
 }
+
+Vector3 Submarine::getVelocity(float deltaTime) const
+{
+	const float subRotationRadians = submarineRotation * PI / 180.0;
+	return {
+		-1 * horizontalVelocity * cos(subRotationRadians) * deltaTime,
+		verticalVelocity * 0.7f * deltaTime,
+		horizontalVelocity * sin(subRotationRadians) * deltaTime
+	};
+}
+
 
 void Submarine::setPosition(float x, float y, float z)
 {
@@ -171,7 +180,7 @@ void Submarine::syncBb()
 void Submarine::rotate(float angleDeg)
 {
 	submarineRotation = fmod(submarineRotation + angleDeg, 360);
-	boundingBox->rotate(submarinePosition, angleDeg * PI / 180);
+	boundingBox->rotate(angleDeg * PI / 180);
 }
 
 
@@ -191,22 +200,22 @@ AISubmarine::AISubmarine(unsigned int textureId, GLUquadricObj* qobj) : Submarin
 void AISubmarine::reset()
 {
 	initialized = false;
-	forwardViewBb = new BoundingBox(new Vector3(-10,0,0), new Vector3(6,6,6));
+	forwardViewBb = new BoundingBox(new Vector3(0, 0, 0), new Vector3(-9, 0, 0), 6);
 	forwardViewBb->debugColor[0] = 0;
 	forwardViewBb->debugColor[2] = 1;
 	Submarine::reset();
 }
 
-void AISubmarine::setPosition(float x, float y, float z)
+void AISubmarine::syncBb()
 {
-	forwardViewBb->shift(x - submarinePosition->x, y - submarinePosition->y, z - submarinePosition->z);
-	Submarine::setPosition(x, y, z);
+	Submarine::syncBb();
+	forwardViewBb->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z);
 }
 
 void AISubmarine::rotate(float angleDeg)
 {
 	Submarine::rotate(angleDeg);
-	forwardViewBb->rotate(submarinePosition, angleDeg * PI / 180);
+	forwardViewBb->rotate(angleDeg * PI / 180);
 }
 
 

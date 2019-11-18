@@ -5,11 +5,25 @@
 
 #define PI acos(-1.0)
 
+BoundingBox::BoundingBox(Vector3* position, float size)
+{
+	this->position = position;
+	this->offset = new Vector3(0, 0, 0);
+	this->size = new Vector3(size, size, size);
+}
+
 BoundingBox::BoundingBox(Vector3* position, Vector3* size)
 {
 	this->position = position;
-	this->offset = new Vector3(-size->x/2, -size->y/2, -size->z/2);
+	this->offset = new Vector3(0, 0, 0);
 	this->size = size;
+}
+
+BoundingBox::BoundingBox(Vector3* position, Vector3* offset, float size)
+{
+	this->position = position;
+	this->offset = offset;
+	this->size = new Vector3(size, size, size);
 }
 
 BoundingBox::BoundingBox(Vector3* position, Vector3* offset, Vector3* size)
@@ -39,42 +53,48 @@ void BoundingBox::shift(float x, float y, float z)
 		child->shift(x, y, z);
 }
 
-void BoundingBox::rotate(Vector3* origin, float angle)
+void BoundingBox::rotate(float angle)
 {
-	const float cos = cosf(angle);
-	const float sin = sinf(angle);
+	if (offset->x != 0 || offset->z != 0)
+	{
+		const float cos = cosf(angle);
+		const float sin = sinf(angle);
 
-	const float xDiff = position->x - origin->x;
-	const float zDiff = position->z - origin->z;
+		const float oldX = offset->x;
+		const float oldZ = offset->z;
 
-	position->x = (cos * xDiff + sin * zDiff) + origin->x;
-	position->z = (-sin * xDiff + cos * zDiff) + origin->z;
+		offset->x = cos * oldX + sin * oldZ;
+		offset->z = -sin * oldX + cos * oldZ;
+	}
 
 	if (child != nullptr)
-		child->rotate(origin, angle);
+		child->rotate(angle);
 }
 
+bounds BoundingBox::getBounds()
+{
+	const float x1 = position->x + offset->x - size->x / 2;
+	const float y1 = position->y + offset->y - size->y / 2;
+	const float z1 = position->z + offset->z - size->z / 2;
+	const float x2 = x1 + size->x;
+	const float y2 = y1 + size->y;
+	const float z2 = z1 + size->z;
+	return {x1,y1,z1,x2,y2,z2};
+}
 
+float BoundingBox::getLowerY()
+{
+	return position->y + offset->y;
+}
 
 bool BoundingBox::intersects(BoundingBox other)
 {
-	const float x1 = position->x;
-	const float y1 = position->y;
-	const float z1 = position->z;
-	const float x2 = position->x + size->x;
-	const float y2 = position->y + size->y;
-	const float z2 = position->z + size->z;
+	const bounds b1 = getBounds();
+	const bounds b2 = other.getBounds();
 
-	const float other_x1 = other.position->x;
-	const float other_y1 = other.position->y;
-	const float other_z1 = other.position->z;
-	const float other_x2 = other.position->x + other.size->x;
-	const float other_y2 = other.position->y + other.size->y;
-	const float other_z2 = other.position->z + other.size->z;
-
-	if (x2 < other_x1 || other_x2 < x1 ||
-		y2 < other_y1 || other_y2 < y1 ||
-		z2 < other_z1 || other_z2 < z1)
+	if (b1.x2 < b2.x1 || b2.x2 < b1.x1 ||
+		b1.y2 < b2.y1 || b2.y2 < b1.y1 ||
+		b1.z2 < b2.z1 || b2.z2 < b1.z1)
 		return child != nullptr ? child->intersects(other) : false;
 	return true;
 }
@@ -84,63 +104,35 @@ void BoundingBox::debugDraw()
 	glDisable(GL_LIGHTING);
 	glColor3fv(debugColor);
 
-	float x = position->x + offset->x;
-	float y = position->y + offset->y;
-	float z = position->z + offset->z;
-	float x2 = x + size->x;
-	float y2 = y + size->y;
-	float z2 = z + size->z;
+	const bounds b = getBounds();
 	
 	glBegin(GL_LINE_LOOP);
-	glVertex3f(x, y, z);
-	glVertex3f(x2, y, z);
-	glVertex3f(x2, y, z2);
-	glVertex3f(x, y, z2);
+	glVertex3f(b.x1, b.y1, b.z1);
+	glVertex3f(b.x2, b.y1, b.z1);
+	glVertex3f(b.x2, b.y1, b.z2);
+	glVertex3f(b.x1, b.y1, b.z2);
 	glEnd();
 	
 	glBegin(GL_LINE_LOOP);
-	glVertex3f(x, y2, z);
-	glVertex3f(x2, y2, z);
-	glVertex3f(x2, y2, z2);
-	glVertex3f(x, y2, z2);
+	glVertex3f(b.x1, b.y2, b.z1);
+	glVertex3f(b.x2, b.y2, b.z1);
+	glVertex3f(b.x2, b.y2, b.z2);
+	glVertex3f(b.x1, b.y2, b.z2);
 	glEnd();
 
 	glBegin(GL_LINES);
-	glVertex3f(x, y, z);
-	glVertex3f(x, y2, z);
-	glVertex3f(x2, y, z);
-	glVertex3f(x2, y2, z);
-	glVertex3f(x2, y, z2);
-	glVertex3f(x2, y2, z2);
-	glVertex3f(x, y, z2);
-	glVertex3f(x, y2, z2);
+	glVertex3f(b.x1, b.y1, b.z1);
+	glVertex3f(b.x1, b.y2, b.z1);
+	glVertex3f(b.x2, b.y1, b.z1);
+	glVertex3f(b.x2, b.y2, b.z1);
+	glVertex3f(b.x2, b.y1, b.z2);
+	glVertex3f(b.x2, b.y2, b.z2);
+	glVertex3f(b.x1, b.y1, b.z2);
+	glVertex3f(b.x1, b.y2, b.z2);
 	glEnd();
 	
 	glEnable(GL_LIGHTING);
 
 	if (child != nullptr)
 		child->debugDraw();
-}
-
-float BoundingBox::getLowerY()
-{
-	return position->y + offset->y;
-}
-
-Vector3* BoundingBox::getLowerCorner()
-{
-	return new Vector3(
-		position->x + offset->x,
-		position->y + offset->y,
-		position->z + offset->z
-	);
-}
-
-Vector3* BoundingBox::getUpperCorner()
-{
-	return new Vector3(
-		position->x + offset->x + size->x,
-		position->y + offset->y + size->y,
-		position->z + offset->z + size->z
-	);
 }
