@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include "BoundingBox.h"
+#include <vector>
 
 extern "C" {
 #include "Vector3D.h"
@@ -48,7 +49,7 @@ Vector3D meshOrigin;
 QuadMesh groundMesh;
 
 Submarine* submarine;
-AISubmarine* enemySubs;
+std::vector<AISubmarine*> enemySubs;
 
 // prototypes
 bool keyDown(int);
@@ -258,10 +259,10 @@ void init(int w, int h)
 	submarine->reset();
 	submarine->setFast();
 
-	enemySubs = {
-		new AISubmarine(texture, qobj)
-	};
-	(enemySubs+0)->reset();
+	enemySubs.push_back(new AISubmarine(texture, qobj));
+	enemySubs.push_back(new AISubmarine(texture, qobj));
+	enemySubs.at(0)->reset();
+	enemySubs.at(1)->reset();
 	srand(234);
 }
 
@@ -315,9 +316,9 @@ void mainLoop(int x)
 	if (!withinGroundMeshBounds(submarine->getBoundingBox()) || !aboveGroundMesh(submarine->getBoundingBox()))
 		submarine->reset();
 
-	for (int i = 0; i < sizeof(*enemySubs) / sizeof(AISubmarine); i++)
+	for (int i = 0; i < enemySubs.size(); i++)
 	{
-		AISubmarine* enemySub = &enemySubs[i];
+		AISubmarine* enemySub = enemySubs[i];
 		if (!enemySub->initialized)
 		{
 			float x, z;
@@ -339,10 +340,10 @@ void mainLoop(int x)
 			if (enemySub->powerCalcCooldown > 0) enemySub->powerCalcCooldown--;
 			else
 			{
-				if (enemySub->powerDirection != 0 && rand() % 100 == 0)
+				if (enemySub->powerDirection != 0 && rand() % 200 == 0)
 				{
 					enemySub->powerDirection = 0;
-					enemySub->powerCalcCooldown = 10 + rand() % 90; // 200-2000ms
+					enemySub->powerCalcCooldown = 10 + rand() % 30;
 				}
 				else
 				{
@@ -529,15 +530,17 @@ void display()
 		visualizeGroundBoundary(submarine->getBoundingBox());
 	}
 
-	for (int i = 0; i < sizeof(*enemySubs) / sizeof(AISubmarine); i++)
+	for (int i = 0; i < enemySubs.size(); i++)
 	{
-		AISubmarine enemySub = enemySubs[i];
-		enemySub.draw();
+		AISubmarine* enemySub = enemySubs[i];
+		if (!enemySub->initialized)
+			continue;
+		enemySub->draw();
 		if (debugMode)
 		{
-			enemySub.getBoundingBox().debugDraw();
-			enemySub.forwardViewBb->debugDraw();
-			visualizeGroundBoundary(enemySub.getBoundingBox());
+			enemySub->getBoundingBox().debugDraw();
+			enemySub->forwardViewBb->debugDraw();
+			visualizeGroundBoundary(enemySub->getBoundingBox());
 		}
 	}
 
