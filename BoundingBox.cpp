@@ -5,6 +5,13 @@
 
 #define PI acos(-1.0)
 
+BoundingBox::BoundingBox(Vector3* position, Vector3* size)
+{
+	this->position = position;
+	this->offset = new Vector3(-size->x/2, -size->y/2, -size->z/2);
+	this->size = size;
+}
+
 BoundingBox::BoundingBox(Vector3* position, Vector3* offset, Vector3* size)
 {
 	this->position = position;
@@ -75,7 +82,7 @@ bool BoundingBox::intersects(BoundingBox other)
 void BoundingBox::debugDraw()
 {	
 	glDisable(GL_LIGHTING);
-	glColor3f(1, 0, 0);
+	glColor3fv(debugColor);
 
 	float x = position->x + offset->x;
 	float y = position->y + offset->y;

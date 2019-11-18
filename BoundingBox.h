@@ -4,6 +4,7 @@
 class BoundingBox
 {
 public:
+	BoundingBox(Vector3* position, Vector3* size);
 	BoundingBox(Vector3* position, Vector3* offset, Vector3* size);
 	Vector3 getPosition();
 	void setPosition(float, float, float);
@@ -15,6 +16,7 @@ public:
 	Vector3* getLowerCorner();
 	Vector3* getUpperCorner();
 	BoundingBox* child;
+	float debugColor[3] = {1,0,0};
 private:
 	Vector3* position;
 	Vector3* offset;

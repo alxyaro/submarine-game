@@ -255,7 +255,13 @@ void init(int w, int h)
 	gluQuadricDrawStyle(qobj, GLU_FILL);
 
 	submarine = new Submarine(texture, qobj);
+	submarine->reset();
 	submarine->setFast();
+
+	enemySubs = {
+		new AISubmarine(texture, qobj)
+	};
+	(enemySubs+0)->reset();
 }
 
 void resize(int width, int height)
@@ -302,6 +308,27 @@ void mainLoop(int x)
 	submarine->tick(power, rotation, vertical, deltaTime);
 	if (!withinGroundMeshBounds(submarine->getBoundingBox()) || !aboveGroundMesh(submarine->getBoundingBox()))
 		submarine->reset();
+
+	for (int i = 0; i < sizeof(*enemySubs) / sizeof(AISubmarine); i++)
+	{
+		AISubmarine* enemySub = &enemySubs[i];
+		if (!enemySub->initialized)
+		{
+			float x, z;
+			do
+			{
+				x = rand() % 50 + 20;
+				z = rand() % 50 + 20;
+				if (rand() % 2 == 0) x *= -1;
+				if (rand() % 2 == 0) z *= -1;
+			} while (fabs(x - submarine->getPosition().x) < 15 || fabs(z - submarine->getPosition().z) < 15);
+			enemySub->getBoundingBox().setPosition(x, 0, z);
+			enemySub->rotate(rand() % 360);
+			enemySub->setPosition(x, getHighestGroundPosition(enemySub->getBoundingBox(), true).y+10, z);
+			enemySub->initialized = true;
+		}
+		enemySub->rotate(2);
+	}
 	
 	//printf("below mesh = %i\n", belowMesh(submarine->getBoundingBox()));
 
@@ -457,6 +484,18 @@ void display()
 	{
 		submarine->getBoundingBox().debugDraw();
 		visualizeGroundBoundary(submarine->getBoundingBox());
+	}
+
+	for (int i = 0; i < sizeof(*enemySubs) / sizeof(AISubmarine); i++)
+	{
+		AISubmarine enemySub = enemySubs[i];
+		enemySub.draw();
+		if (debugMode)
+		{
+			enemySub.getBoundingBox().debugDraw();
+			enemySub.forwardViewBb->debugDraw();
+			visualizeGroundBoundary(enemySub.getBoundingBox());
+		}
 	}
 
 	DrawMeshQM(&groundMesh, meshResolution, debugMode); // draw ground mesh

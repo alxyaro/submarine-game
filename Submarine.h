@@ -1,12 +1,12 @@
 #pragma once
 #include <GL/glut.h>
 extern "C" {
-#include "Vector3D.h"
 #include "BoundingBox.h"
 }
 
 class Submarine
 {
+	friend class AISubmarine;
 public:
 	Submarine(unsigned int, GLUquadricObj*);
 	virtual void reset();
@@ -37,7 +37,8 @@ private:
 	float verticalVelocity = 0;
 
 	BoundingBox* boundingBox;
-	
+
+	void syncBb();
 	void drawSubBody();
 	void drawSubTower();
 	void drawFin();
@@ -47,11 +48,12 @@ private:
 class AISubmarine : public Submarine
 {
 public:
+	AISubmarine(unsigned int, GLUquadricObj*);
 	bool initialized;
 	void reset() override;
 	void setPosition(float, float, float) override;
 	void rotate(float) override;
-private:
+	BoundingBox* forwardViewBb;
 	short powerDirection;
 	short rotationDirection;
 	short verticalDirection;

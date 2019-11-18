@@ -8,14 +8,14 @@ Submarine::Submarine(unsigned int textureId, GLUquadricObj* qobj)
 	this->textureId = textureId;
 	this->qobj = qobj;
 	this->submarinePosition = new Vector3(0, 0, 0);
-
-	reset();
 }
 
 void Submarine::reset()
 {
-	setPosition(0, 15, 0);
-
+	submarinePosition->x = 0;
+	submarinePosition->y = 0;
+	submarinePosition->z = 0;
+	
 	this->boundingBox = new BoundingBox(new Vector3(0, 0, 0), new Vector3(-0.7, -0.7, -0.7), new Vector3(1.4, 1.4, 1.4));
 	BoundingBox* lastBB = boundingBox;
 	for (int i = 0; i < 4; i++)
@@ -30,8 +30,8 @@ void Submarine::reset()
 		lastBB->child = newBB;
 		lastBB = newBB;
 	}
-	
-	boundingBox->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z);
+
+	setPosition(0, 15, 0);
 	
 	submarineRotation = 0;
 	rotate(-90);
@@ -145,7 +145,7 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 		submarinePosition->y += verticalVelocity / 70;
 	// end vertical movement
 
-	boundingBox->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z); // update bbox
+	syncBb();
 }
 
 
@@ -159,7 +159,14 @@ void Submarine::setPosition(float x, float y, float z)
 	submarinePosition->x = x;
 	submarinePosition->y = y;
 	submarinePosition->z = z;
+	syncBb();
 }
+
+void Submarine::syncBb()
+{
+	boundingBox->setPosition(submarinePosition->x, submarinePosition->y, submarinePosition->z);
+}
+
 
 void Submarine::rotate(float angleDeg)
 {
@@ -179,7 +186,36 @@ BoundingBox Submarine::getBoundingBox()
 	return *boundingBox;
 }
 
+AISubmarine::AISubmarine(unsigned int textureId, GLUquadricObj* qobj) : Submarine(textureId, qobj){}
 
+void AISubmarine::reset()
+{
+	initialized = false;
+	forwardViewBb = new BoundingBox(new Vector3(-10,0,0), new Vector3(6,6,6));
+	forwardViewBb->debugColor[0] = 0;
+	forwardViewBb->debugColor[2] = 1;
+	Submarine::reset();
+}
+
+void AISubmarine::setPosition(float x, float y, float z)
+{
+	forwardViewBb->shift(x - submarinePosition->x, y - submarinePosition->y, z - submarinePosition->z);
+	Submarine::setPosition(x, y, z);
+}
+
+void AISubmarine::rotate(float angleDeg)
+{
+	Submarine::rotate(angleDeg);
+	forwardViewBb->rotate(submarinePosition, angleDeg * PI / 180);
+}
+
+
+
+
+
+
+
+// DRAW METHODS
 
 
 void Submarine::draw()
