@@ -59,6 +59,7 @@ void init(int, int);
 void resize(int, int);
 void updateCamera(void);
 void mainLoop(int);
+short determineRequiredAiSubTurnDirection(Vector3, Vector3);
 Vector3 getHighestGroundPosition(BoundingBox, bool);
 bool aboveGroundMesh(BoundingBox);
 bool withinGroundMeshBounds(BoundingBox);
@@ -291,11 +292,6 @@ void updateCamera()
 	); // CTM = I * V
 }
 
-float getSubTurnChance(Vector3 position, Vector3 velocity)
-{
-	return 0;
-}
-
 void mainLoop(int x)
 {
 	const float deltaTime = 20 / 1000.0f; // TODO accurately calculate time since last tick
@@ -334,22 +330,45 @@ void mainLoop(int x)
 			enemySub->setPosition(x, getHighestGroundPosition(enemySub->getBoundingBox(), true).y+10, z);
 			enemySub->initialized = true;
 		}
+		if (enemySub->powerCalcCooldown > 0) enemySub->powerCalcCooldown--;
+		if (enemySub->rotationCalcCooldown > 0) enemySub->rotationCalcCooldown--;
 		if (enemySub->aiCooldown > 0) enemySub->aiCooldown--;
 		else
 		{
-			if (enemySub->powerCalcCooldown > 0) enemySub->powerCalcCooldown--;
-			else
+			// power
+			if (enemySub->powerCalcCooldown == 0)
 			{
 				if (enemySub->powerDirection != 0 && rand() % 200 == 0)
 				{
 					enemySub->powerDirection = 0;
-					enemySub->powerCalcCooldown = 10 + rand() % 30;
+					enemySub->powerCalcCooldown = 25 + rand() % 50; // 500-1500ms
 				}
 				else
 				{
 					enemySub->powerDirection = 1;
 				}
 			}
+
+			// rotation
+			float requiredRotationDir = determineRequiredAiSubTurnDirection(enemySub->getPosition(), enemySub->getVelocity(1));
+			if (requiredRotationDir != 0)
+				enemySub->rotationDirection = requiredRotationDir;
+			else if (enemySub->rotationCalcCooldown == 0)
+			{
+				if (rand() % 100 <= 5) // 5% chance we start turning
+				{
+					enemySub->rotationDirection = 0.29f+(static_cast <float> (rand()) / static_cast <float> (RAND_MAX))*0.7f;
+					enemySub->rotationDirection *= rand() % 2 == 0 ? -1 : 1;
+					enemySub->rotationCalcCooldown = 10 + rand() % 20;
+				}
+				else
+				{
+					enemySub->rotationDirection = 0;
+					enemySub->rotationCalcCooldown = 50;
+				}
+			}
+
+			// elevation
 			BoundingBox bbox = enemySub->getBoundingBox();
 			Vector3 belowSurface = getHighestGroundPosition(bbox, true);
 			Vector3 aheadSurface = getHighestGroundPosition(*enemySub->forwardViewBb, true);
@@ -369,7 +388,7 @@ void mainLoop(int x)
 				enemySub->verticalDirection = 0;
 			}
 			
-			enemySub->aiCooldown = 5 + rand() % 15;
+			enemySub->aiCooldown = 25 + rand() % 25;
 		}
 		enemySub->tick(enemySub->powerDirection, enemySub->rotationDirection, enemySub->verticalDirection, deltaTime);
 		if (!withinGroundMeshBounds(enemySub->getBoundingBox()) || !aboveGroundMesh(enemySub->getBoundingBox()))
@@ -385,6 +404,50 @@ void mainLoop(int x)
 	glutTimerFunc(20, mainLoop, 0);
 }
 
+// this is for avoiding the ground boundary TODO & main submarine
+short determineRequiredAiSubTurnDirection(Vector3 position, Vector3 velocity)
+{
+	velocity.y = 0;
+	velocity.normalize();
+	
+	float padding = 15;
+	float safeZone = meshSize / 2 - padding;
+
+	Vector3 targetDirection = { 0,0,0 };
+
+	if (position.x < -safeZone)
+		targetDirection.x = 1;
+	else if (position.x > safeZone)
+		targetDirection.x = -1;
+	
+	if (position.z < -safeZone)
+		targetDirection.z = 1;
+	else if (position.z > safeZone)
+		targetDirection.z = -1;
+
+	if (!targetDirection.isZero())
+	{
+		targetDirection.normalize();
+		float dotProduct = targetDirection.dotProduct(velocity);
+		// dot product:
+		// 1 if both vectors same dir
+		// 0 if vector perpendicular
+		// -1 if vectors opposite dirs
+		if (dotProduct < 0.25) // not going in the direction we want
+		{
+			Vector3 turnLeft = velocity.copy();
+			turnLeft.rotateAboutYAxis(0.17); // around 10 deg
+			Vector3 turnRight = velocity.copy();
+			turnRight.rotateAboutYAxis(-0.17);
+
+			//printf("(%f,%f) < %f > (%f,%f) -> turning %s\n", velocity.x, velocity.z, dotProduct, targetDirection.x, targetDirection.z, turnLeft.angleXZ(targetDirection) < turnRight.angleXZ(targetDirection) ? "left" : "right");
+			return turnLeft.angleXZ(targetDirection) < turnRight.angleXZ(targetDirection) ? -1 : 1;
+		}
+	}
+	
+
+	return 0;
+}
 Vector3D getMeshVertex(int meshX, int meshZ)
 {
 	int index = (-meshZ) * (meshResolution + 1) + meshX;

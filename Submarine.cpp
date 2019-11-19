@@ -44,8 +44,10 @@ void Submarine::reset()
 	ticksLived = 0;
 }
 
-void Submarine::tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime)
+void Submarine::tick(short powerDirection, float rotationDirection, short verticalDirection, float deltaTime)
 {
+	if (rotationDirection < -1 || rotationDirection > 1)
+		throw "Invalid rotationDirection value.";
 	ticksLived++;
 	if (powerDirection == 1)
 	{
@@ -91,17 +93,11 @@ void Submarine::tick(short powerDirection, short rotationDirection, short vertic
 		horizontalVelocity = static_cast<float>(fmin(0, horizontalVelocity + waterDrag * deltaTime));
 
 	// rotation
-	if (rotationDirection == 1)
-	{
-		if (rotationDirection != -1)
-		{
-			rotationalVelocity = static_cast<float>(fmin(1.5, rotationalVelocity + 0.3));
-		}
-	}
-	else if (rotationDirection == -1)
-	{
-		rotationalVelocity = static_cast<float>(fmax(-1.5, rotationalVelocity - 0.3));
-	}
+	rotationalVelocity += 0.3f * rotationDirection;
+	if (rotationalVelocity > 0)
+		rotationalVelocity = fmin(1.5, rotationalVelocity);
+	else
+		rotationalVelocity = fmax(-1.5, rotationalVelocity);
 
 	if (rotationalVelocity > 0)
 		rotationalVelocity = static_cast<float>(fmax(0, rotationalVelocity - 0.1));

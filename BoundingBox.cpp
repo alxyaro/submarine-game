@@ -56,16 +56,7 @@ void BoundingBox::shift(float x, float y, float z)
 void BoundingBox::rotate(float angle)
 {
 	if (offset->x != 0 || offset->z != 0)
-	{
-		const float cos = cosf(angle);
-		const float sin = sinf(angle);
-
-		const float oldX = offset->x;
-		const float oldZ = offset->z;
-
-		offset->x = cos * oldX + sin * oldZ;
-		offset->z = -sin * oldX + cos * oldZ;
-	}
+		offset->rotateAboutYAxis(angle);
 
 	if (child != nullptr)
 		child->rotate(angle);

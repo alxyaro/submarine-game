@@ -24,5 +24,11 @@ public:
 	float y;
 	float z;
 	bool isZero() override;
+	Vector3 copy();
+	float getLength();
+	void normalize();
+	float dotProduct(Vector3 other);
+	float angleXZ(Vector3 other);
+	void rotateAboutYAxis(float angle);
 };
 

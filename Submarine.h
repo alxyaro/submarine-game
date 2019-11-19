@@ -10,7 +10,7 @@ class Submarine
 public:
 	Submarine(unsigned int, GLUquadricObj*);
 	virtual void reset();
-	void tick(short powerDirection, short rotationDirection, short verticalDirection, float deltaTime);
+	void tick(short powerDirection, float rotationDirection, short verticalDirection, float deltaTime);
 	void draw();
 	Vector3 getPosition() const;
 	Vector3 getVelocity(float) const;
@@ -56,9 +56,10 @@ public:
 	void rotate(float) override;
 	BoundingBox* forwardViewBb;
 	short powerDirection;
-	short rotationDirection;
-	short verticalDirection;
 	unsigned short powerCalcCooldown;
+	float rotationDirection;
+	unsigned short rotationCalcCooldown;
+	short verticalDirection;
 	unsigned int aiCooldown;
 protected:
 	void syncBb() override;
