@@ -16,9 +16,12 @@ public:
 	Vector3 getVelocity(float) const;
 	void setPosition(float, float, float);
 	virtual void rotate(float);
+	float getRotation();
 	void setFast();
 	BoundingBox getBoundingBox();
 	unsigned long int ticksLived;
+	bool hasPeriscope = true;
+	float periscopeAngle;
 protected:
 	virtual void syncBb();
 private:

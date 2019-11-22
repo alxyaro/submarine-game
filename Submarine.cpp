@@ -179,6 +179,10 @@ void Submarine::rotate(float angleDeg)
 	boundingBox->rotate(angleDeg * PI / 180);
 }
 
+float Submarine::getRotation()
+{
+	return submarineRotation * PI / 180;
+}
 
 void Submarine::setFast()
 {
@@ -332,6 +336,31 @@ void Submarine::drawSubTower()
 	// TEMP: p' = CTM * T(-2,0.8,0) * p
 	glTranslatef(-2, 0.8, 0); // move relatively to the top-front of the submarine
 
+	if (hasPeriscope)
+	{
+		glPushMatrix();
+		glTranslatef(0,1,0);
+		glScalef(0.05, 0.05,0.05);
+		
+		glPushMatrix();
+		glRotatef(-90, 1, 0, 0);
+		gluCylinder(qobj, 1, 1, 10, 20, 20);
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(0, 10, 0);
+		gluSphere(qobj, 1, 20, 20);
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(0, 10, 0);
+		glRotatef(periscopeAngle-90, 0, 1, 0);
+		gluCylinder(qobj, 1, 1, 4, 20, 20);
+		glPopMatrix();
+		
+		glPopMatrix();
+	}
+	
 	// extra - warping the tower a bit
 	// TEMP: p' = CTM * T(-2,0.8,0) * R(-25,0,0,1) * p
 	glRotatef(-25, 0, 0, 1); // rotate

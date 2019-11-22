@@ -16,12 +16,14 @@ extern "C" {
 
 #define PI acos(-1.0)
 
-#define KEY_MOVEMENT_FORWARD 0b00000001
-#define KEY_MOVEMENT_BACKWARD 0b00000010
-#define KEY_ROTATION_LEFT 0b00000100
-#define KEY_ROTATION_RIGHT 0b00001000
-#define KEY_MOVEMENT_UP 0b00010000
-#define KEY_MOVEMENT_DOWN 0b00100000
+#define KEY_MOVEMENT_FORWARD	0b000000000001
+#define KEY_MOVEMENT_BACKWARD	0b000000000010
+#define KEY_ROTATION_LEFT		0b000000000100
+#define KEY_ROTATION_RIGHT		0b000000001000
+#define KEY_MOVEMENT_UP			0b000000010000
+#define KEY_MOVEMENT_DOWN		0b000000100000
+#define KEY_PERISCOPE_LEFT		0b000001000000
+#define KEY_PERISCOPE_RIGHT		0b000010000000
 
 int keyMask = 0;
 
@@ -49,6 +51,7 @@ Vector3D meshOrigin;
 QuadMesh groundMesh;
 
 Submarine* submarine;
+bool periscopeView;
 std::vector<AISubmarine*> enemySubs;
 
 // prototypes
@@ -273,8 +276,7 @@ void resize(int width, int height)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0, (GLdouble)width / height, 0.2, 300.0);
-
+	gluPerspective(periscopeView ? 100 : 60.0, (GLdouble)width / height, 0.2, 300.0);
 	glMatrixMode(GL_MODELVIEW);
 
 	updateCamera();
@@ -282,14 +284,37 @@ void resize(int width, int height)
 
 void updateCamera()
 {
-	// TODO modes
 	glLoadIdentity();
 	Vector3 position = submarine->getPosition();
-	gluLookAt(
-		position.x, position.y + 50, position.z + 50,
-		position.x, position.y, position.z,
-		0, 1, 0
-	); // CTM = I * V
+	if (periscopeView)
+	{
+		position.y += 2.25 + 0.05;
+
+		position.x -= cosf(submarine->getRotation()) * 2;
+		position.z += sinf(submarine->getRotation()) * 2;
+
+		const float periscopeAngleRad = submarine->periscopeAngle * PI / 180;
+		
+		float dirX = -cosf(submarine->getRotation() + periscopeAngleRad);
+		float dirZ = sinf(submarine->getRotation() + periscopeAngleRad);
+		
+		position.x += dirX * 0.18;
+		position.z += dirZ * 0.18;
+		
+		gluLookAt(
+			position.x, position.y, position.z,
+			position.x + dirX, position.y, position.z + dirZ,
+			0, 1, 0
+		); // CTM = I * V
+	}
+	else
+	{
+		gluLookAt(
+			position.x, position.y + 40, position.z + 40,
+			position.x, position.y, position.z,
+			0, 1, 0
+		); // CTM = I * V
+	}
 }
 
 void mainLoop(int x)
@@ -309,6 +334,10 @@ void mainLoop(int x)
 		vertical -= 1;
 
 	submarine->tick(power, rotation, vertical, deltaTime);
+	if (keyDown(KEY_PERISCOPE_LEFT))
+		submarine->periscopeAngle += 1.5;
+	if (keyDown(KEY_PERISCOPE_RIGHT))
+		submarine->periscopeAngle -= 1.5;
 	if (!withinGroundMeshBounds(submarine->getBoundingBox()) || !aboveGroundMesh(submarine->getBoundingBox()))
 		submarine->reset();
 
@@ -675,6 +704,10 @@ void special(int key, int x, int y)
 		keyMask |= KEY_MOVEMENT_UP; break;
 	case GLUT_KEY_DOWN:
 		keyMask |= KEY_MOVEMENT_DOWN; break;
+	case GLUT_KEY_LEFT:
+		keyMask |= KEY_PERISCOPE_LEFT; break;
+	case GLUT_KEY_RIGHT:
+		keyMask |= KEY_PERISCOPE_RIGHT; break;
 	}
 }
 
@@ -686,6 +719,14 @@ void specialUp(int key, int x, int y)
 		keyMask &= ~KEY_MOVEMENT_UP; break;
 	case GLUT_KEY_DOWN:
 		keyMask &= ~KEY_MOVEMENT_DOWN; break;
+	case GLUT_KEY_LEFT:
+		keyMask &= ~KEY_PERISCOPE_LEFT; break;
+	case GLUT_KEY_RIGHT:
+		keyMask &= ~KEY_PERISCOPE_RIGHT; break;
+	case GLUT_KEY_F2:
+		periscopeView = !periscopeView;
+		resize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+		break;
 	case GLUT_KEY_F3:
 		debugMode = !debugMode; break;
 	case GLUT_KEY_F1:
