@@ -293,7 +293,7 @@ void updateCamera()
 		position.x -= cosf(submarine->getRotation()) * 2;
 		position.z += sinf(submarine->getRotation()) * 2;
 
-		const float periscopeAngleRad = submarine->periscopeAngle * PI / 180;
+		const float periscopeAngleRad = submarine->getPeriscopeRotation();
 		
 		float dirX = -cosf(submarine->getRotation() + periscopeAngleRad);
 		float dirZ = sinf(submarine->getRotation() + periscopeAngleRad);
@@ -335,9 +335,9 @@ void mainLoop(int x)
 
 	submarine->tick(power, rotation, vertical, deltaTime);
 	if (keyDown(KEY_PERISCOPE_LEFT))
-		submarine->periscopeAngle += 1.5;
+		submarine->rotatePeriscope(1.5, true);
 	if (keyDown(KEY_PERISCOPE_RIGHT))
-		submarine->periscopeAngle -= 1.5;
+		submarine->rotatePeriscope(-1.5, true);
 	if (!withinGroundMeshBounds(submarine->getBoundingBox()) || !aboveGroundMesh(submarine->getBoundingBox()))
 		submarine->reset();
 
@@ -678,6 +678,9 @@ void keyboard(unsigned char key, int x, int y)
 		keyMask |= KEY_ROTATION_LEFT; break;
 	case 'r':
 		reset(); break;
+	case 'x':
+		submarine->alignWithPeriscope();
+		break;
 	}
 }
 

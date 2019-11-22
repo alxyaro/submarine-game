@@ -19,9 +19,10 @@ public:
 	float getRotation();
 	void setFast();
 	BoundingBox getBoundingBox();
+	float getPeriscopeRotation();
+	void rotatePeriscope(float angleDeg, bool resetAlignAnimation);
+	void alignWithPeriscope();
 	unsigned long int ticksLived;
-	bool hasPeriscope = true;
-	float periscopeAngle;
 protected:
 	virtual void syncBb();
 private:
@@ -43,6 +44,11 @@ private:
 	float verticalVelocity = 0;
 
 	BoundingBox* boundingBox;
+
+	bool hasPeriscope = true;
+	float periscopeRotation;
+	float periscopeAlignmentAnimationDuration;
+	float periscopeAlignmentAnimationAmount;
 
 	void drawSubBody();
 	void drawSubTower();

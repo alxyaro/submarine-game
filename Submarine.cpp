@@ -42,6 +42,9 @@ void Submarine::reset()
 	verticalVelocity = 0;
 
 	ticksLived = 0;
+
+	periscopeRotation = 0;
+	periscopeAlignmentAnimationDuration = 0;
 }
 
 void Submarine::tick(short powerDirection, float rotationDirection, short verticalDirection, float deltaTime)
@@ -138,6 +141,26 @@ void Submarine::tick(short powerDirection, float rotationDirection, short vertic
 		submarinePosition->z += velocity.z;
 	}
 
+	if (rotationDirection != 0)
+		periscopeAlignmentAnimationDuration = 0;
+	if (periscopeAlignmentAnimationDuration > 0)
+	{
+		float pct = deltaTime;
+		if (periscopeAlignmentAnimationDuration < pct)
+		{
+			pct = periscopeAlignmentAnimationDuration;
+			periscopeAlignmentAnimationDuration = 0;
+		}
+		else
+		{
+			periscopeAlignmentAnimationDuration -= pct;
+		}
+
+		pct *= periscopeAlignmentAnimationAmount;
+		
+		rotate(pct);
+		rotatePeriscope(-pct, false);
+	}
 
 	syncBb();
 }
@@ -194,6 +217,30 @@ BoundingBox Submarine::getBoundingBox()
 {
 	return *boundingBox;
 }
+
+float Submarine::getPeriscopeRotation()
+{
+	return periscopeRotation * PI / 180;
+}
+
+void Submarine::rotatePeriscope(float angleDeg, bool resetAlignAnimation)
+{
+	periscopeRotation = fmod(periscopeRotation + angleDeg, 360);
+	if (resetAlignAnimation)
+		periscopeAlignmentAnimationDuration = 0;
+}
+
+void Submarine::alignWithPeriscope()
+{
+	float amount = periscopeRotation;
+	if (amount > 180)
+		amount -= 360;
+
+	periscopeAlignmentAnimationDuration = fabs(amount)/90; // 2s for 180deg rotation
+	periscopeAlignmentAnimationAmount = amount / periscopeAlignmentAnimationDuration;
+}
+
+
 
 AISubmarine::AISubmarine(unsigned int textureId, GLUquadricObj* qobj) : Submarine(textureId, qobj){}
 
@@ -354,7 +401,7 @@ void Submarine::drawSubTower()
 
 		glPushMatrix();
 		glTranslatef(0, 10, 0);
-		glRotatef(periscopeAngle-90, 0, 1, 0);
+		glRotatef(periscopeRotation-90, 0, 1, 0);
 		gluCylinder(qobj, 1, 1, 4, 20, 20);
 		glPopMatrix();
 		
