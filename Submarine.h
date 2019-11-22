@@ -13,6 +13,7 @@ public:
 	void tick(short powerDirection, float rotationDirection, short verticalDirection, float deltaTime);
 	void draw();
 	Vector3 getPosition() const;
+	Vector3 getDirection();
 	Vector3 getVelocity(float) const;
 	void setPosition(float, float, float);
 	virtual void rotate(float);

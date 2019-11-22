@@ -41,6 +41,21 @@ Vector3 Vector3::copy()
 	return { x,y,z };
 }
 
+void Vector3::mult(float factor)
+{
+	x *= factor;
+	y *= factor;
+	z *= factor;
+}
+
+void Vector3::add(Vector3 other)
+{
+	x += other.x;
+	y += other.y;
+	z += other.z;
+}
+
+
 float Vector3::getLength()
 {
 	return sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
@@ -60,6 +75,15 @@ float Vector3::dotProduct(Vector3 other)
 	return x * other.x + y * other.y + z * other.z;
 }
 
+Vector3 Vector3::crossProduct(Vector3 other)
+{
+	float newX = y * other.z - other.y * z;
+	float newY = z * other.x - other.z * x;
+	float newZ = x * other.y - other.x * y;
+	return { newX,newY,newZ };
+}
+
+
 float Vector3::angleXZ(Vector3 other)
 {
 	return acosf(dotProduct(other)/(getLength()*other.getLength()));
@@ -76,4 +100,20 @@ void Vector3::rotateAboutYAxis(float angle)
 	x = cos * oldX + sin * oldZ;
 	z = -sin * oldX + cos * oldZ;
 }
+
+float Vector3::getAngleToAxis(float x, float y, float z)
+{
+	Vector3 copyVector = copy();
+	copyVector.normalize();
+	Vector3 axis = { x,y,z };
+	axis.normalize();
+	return acosf(copyVector.dotProduct(axis));
+}
+
+float Vector3::distanceTo(Vector3 other)
+{
+	return sqrt(powf(x - other.x, 2) + powf(y - other.y, 2) + powf(z - other.z, 2));
+}
+
+
 

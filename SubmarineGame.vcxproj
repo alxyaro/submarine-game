@@ -25,6 +25,7 @@
     <ClCompile Include="perlin.c" />
     <ClCompile Include="QuadMesh.c" />
     <ClCompile Include="Submarine.cpp" />
+    <ClCompile Include="Torpedo.cpp" />
     <ClCompile Include="Vector.cpp" />
     <ClCompile Include="Vector3D.c" />
   </ItemGroup>
@@ -35,6 +36,7 @@
     <ClInclude Include="QuadMesh.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Submarine.h" />
+    <ClInclude Include="Torpedo.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="Vector3D.h" />
   </ItemGroup>

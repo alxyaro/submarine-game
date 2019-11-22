@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 #include "BoundingBox.h"
 #include <vector>
+#include "Torpedo.h"
 
 extern "C" {
 #include "Vector3D.h"
@@ -56,6 +57,9 @@ Submarine* submarine;
 bool periscopeView;
 float zoomPct;
 std::vector<AISubmarine*> enemySubs;
+
+GLUquadric* torpedoQuadric;
+std::vector<Torpedo*> torpedoes;
 
 // prototypes
 bool keyDown(int);
@@ -239,9 +243,9 @@ void init(int w, int h)
 	//Set(&BBox.max, 8.0f, 6.0,  8.0);
 
 
-	unsigned int texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	unsigned int subTextureId;
+	glGenTextures(1, &subTextureId);
+	glBindTexture(GL_TEXTURE_2D, subTextureId);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
@@ -249,6 +253,17 @@ void init(int w, int h)
 	int width, height, nrChannels;
 	unsigned char* subTextureData = stbi_load("sub-metal.png", &width, &height, &nrChannels, 0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, subTextureData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	unsigned int enemySubTextureId;
+	glGenTextures(1, &enemySubTextureId);
+	glBindTexture(GL_TEXTURE_2D, enemySubTextureId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	unsigned char* enemySubTextureData = stbi_load("enemy-sub-metal.png", &width, &height, &nrChannels, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, enemySubTextureData);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// TODO change the following to a cylindrical or cube texture mapping
@@ -263,15 +278,17 @@ void init(int w, int h)
 	gluQuadricTexture(qobj, GL_TRUE);
 	gluQuadricDrawStyle(qobj, GLU_FILL);
 
-	submarine = new Submarine(texture, qobj);
+	submarine = new Submarine(subTextureId, qobj);
 	submarine->reset();
 	submarine->setFast();
 
-	enemySubs.push_back(new AISubmarine(texture, qobj));
+	enemySubs.push_back(new AISubmarine(enemySubTextureId, qobj));
 	enemySubs.at(0)->reset();
-	enemySubs.push_back(new AISubmarine(texture, qobj));
+	enemySubs.push_back(new AISubmarine(enemySubTextureId, qobj));
 	enemySubs.at(1)->reset();
 	srand(234);
+
+	torpedoQuadric = gluNewQuadric();
 }
 
 void resize()
@@ -450,6 +467,41 @@ void mainLoop(int x)
 				}
 			}
 		}
+	}
+
+	for (int i = 0; i < torpedoes.size(); i++)
+	{
+		Torpedo* torpedo = torpedoes[i];
+		torpedo->move(deltaTime);
+		bool remove = false;
+
+		float closestDistance = INT_MAX;
+		Vector3* closestPos = nullptr;
+		for (int j = 0; j < enemySubs.size(); j++)
+		{
+			AISubmarine* enemySub = enemySubs[j];
+			if (enemySub->getBoundingBox().collidesWith(*torpedo->boundingBox))
+			{
+				enemySub->reset();
+				remove = true;
+				break;
+			}
+			float distance = enemySub->getPosition().distanceTo(torpedo->boundingBox->getPosition());
+			if (distance < 100 && distance < closestDistance)
+			{
+				closestDistance = distance;
+				closestPos = new Vector3(enemySub->getPosition().x, enemySub->getPosition().y, enemySub->getPosition().z);
+			}
+		}
+		
+		if (remove || !withinGroundMeshBounds(*torpedo->boundingBox) || !aboveGroundMesh(*torpedo->boundingBox))
+		{
+			torpedoes.erase(torpedoes.begin()+i);
+			i--;
+			continue;
+		}
+		if (closestPos != nullptr)
+			torpedo->goTowards(*closestPos);
 	}
 	
 	//printf("below mesh = %i\n", belowMesh(submarine->getBoundingBox()));
@@ -679,6 +731,17 @@ void display()
 		}
 	}
 
+	for (int i = 0; i < torpedoes.size(); i++)
+	{
+		Torpedo* torpedo = torpedoes[i];
+		torpedo->draw();
+		if (debugMode)
+		{
+			torpedo->boundingBox->debugDraw();
+			visualizeGroundBoundary(*torpedo->boundingBox);
+		}
+	}
+
 	DrawMeshQM(&groundMesh, meshResolution, debugMode); // draw ground mesh
 	// TODO extra ground objects (cubes)
 
@@ -707,8 +770,9 @@ void keyboard(unsigned char key, int x, int y)
 	case 'r':
 		reset(); break;
 	case 'x':
-		submarine->alignWithPeriscope();
-		break;
+		submarine->alignWithPeriscope(); break;
+	case ' ':
+		torpedoes.push_back(new Torpedo{ torpedoQuadric, {submarine->getPosition().x, submarine->getPosition().y-0.7f, submarine->getPosition().z}, submarine->getDirection() }); break;
 	}
 }
 

@@ -31,7 +31,7 @@ void Submarine::reset()
 		lastBB = newBB;
 	}
 
-	setPosition(0, 15, 0);
+	setPosition(0, 17, 0);
 	
 	submarineRotation = 0;
 	rotate(-90);
@@ -170,6 +170,17 @@ Vector3 Submarine::getPosition() const
 {
 	return *submarinePosition;
 }
+
+class Vector3 Submarine::getDirection()
+{
+	const float subRotationRadians = submarineRotation * PI / 180.0;
+	return {
+		-cos(subRotationRadians),
+		0,
+		sin(subRotationRadians)
+	};
+}
+
 
 Vector3 Submarine::getVelocity(float deltaTime) const
 {

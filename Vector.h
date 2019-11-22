@@ -25,10 +25,15 @@ public:
 	float z;
 	bool isZero() override;
 	Vector3 copy();
+	void mult(float factor);
+	void add(Vector3);
 	float getLength();
 	void normalize();
 	float dotProduct(Vector3 other);
+	Vector3 crossProduct(Vector3 other);
 	float angleXZ(Vector3 other);
 	void rotateAboutYAxis(float angle);
+	float getAngleToAxis(float x, float y, float z);
+	float distanceTo(Vector3);
 };
 
