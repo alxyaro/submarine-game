@@ -24,6 +24,8 @@ extern "C" {
 #define KEY_MOVEMENT_DOWN		0b000000100000
 #define KEY_PERISCOPE_LEFT		0b000001000000
 #define KEY_PERISCOPE_RIGHT		0b000010000000
+#define KEY_ZOOM_IN				0b000100000000
+#define KEY_ZOOM_OUT			0b001000000000
 
 int keyMask = 0;
 
@@ -52,6 +54,7 @@ QuadMesh groundMesh;
 
 Submarine* submarine;
 bool periscopeView;
+float zoomPct;
 std::vector<AISubmarine*> enemySubs;
 
 // prototypes
@@ -59,6 +62,7 @@ bool keyDown(int);
 void reset(void);
 
 void init(int, int);
+void resize();
 void resize(int, int);
 void updateCamera(void);
 void mainLoop(int);
@@ -270,13 +274,18 @@ void init(int w, int h)
 	srand(234);
 }
 
+void resize()
+{
+	resize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+}
+
 void resize(int width, int height)
 {
 	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(periscopeView ? 100 : 60.0, (GLdouble)width / height, 0.2, 300.0);
+	gluPerspective(periscopeView ? 100-(zoomPct*80) : 60.0, (GLdouble)width / height, 0.2, 300.0);
 	glMatrixMode(GL_MODELVIEW);
 
 	updateCamera();
@@ -340,7 +349,7 @@ void mainLoop(int x)
 		submarine->rotatePeriscope(-1.5, true);
 	if (!withinGroundMeshBounds(submarine->getBoundingBox()) || !aboveGroundMesh(submarine->getBoundingBox()))
 		submarine->reset();
-
+	
 	for (int i = 0; i < enemySubs.size(); i++)
 	{
 		AISubmarine* enemySub = enemySubs[i];
@@ -445,7 +454,22 @@ void mainLoop(int x)
 	
 	//printf("below mesh = %i\n", belowMesh(submarine->getBoundingBox()));
 
-	updateCamera();
+	bool doResize = false;
+	if (keyDown(KEY_ZOOM_IN))
+	{
+		doResize = true;
+		zoomPct = fmin(zoomPct + 0.02, 1);
+	}
+	if (keyDown(KEY_ZOOM_OUT))
+	{
+		doResize = true;
+		zoomPct = fmax(zoomPct - 0.02, 0);
+	}
+
+	if (doResize)
+		resize();
+	else
+		updateCamera();
 
 	glutPostRedisplay();
 
@@ -676,6 +700,10 @@ void keyboard(unsigned char key, int x, int y)
 		keyMask |= KEY_ROTATION_RIGHT; break;
 	case 'a':
 		keyMask |= KEY_ROTATION_LEFT; break;
+	case 'm':
+		keyMask |= KEY_ZOOM_IN; break;
+	case 'n':
+		keyMask |= KEY_ZOOM_OUT; break;
 	case 'r':
 		reset(); break;
 	case 'x':
@@ -696,6 +724,10 @@ void keyboardUp(unsigned char key, int x, int y)
 		keyMask &= ~KEY_ROTATION_RIGHT; break;
 	case 'a':
 		keyMask &= ~KEY_ROTATION_LEFT; break;
+	case 'm':
+		keyMask &= ~KEY_ZOOM_IN; break;
+	case 'n':
+		keyMask &= ~KEY_ZOOM_OUT; break;
 	}
 }
 
@@ -728,7 +760,7 @@ void specialUp(int key, int x, int y)
 		keyMask &= ~KEY_PERISCOPE_RIGHT; break;
 	case GLUT_KEY_F2:
 		periscopeView = !periscopeView;
-		resize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+		resize();
 		break;
 	case GLUT_KEY_F3:
 		debugMode = !debugMode; break;
