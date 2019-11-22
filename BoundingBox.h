@@ -22,7 +22,8 @@ public:
 	void setPosition(float, float, float);
 	void shift(float, float, float);
 	void rotate(float);
-	bool intersects(BoundingBox other);
+	bool collidesWith(BoundingBox other);
+	bool collidesWith(BoundingBox other,bool);
 	void debugDraw();
 	float getLowerY();
 	bounds getBounds();

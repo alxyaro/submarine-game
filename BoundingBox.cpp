@@ -78,7 +78,12 @@ float BoundingBox::getLowerY()
 	return position->y + offset->y;
 }
 
-bool BoundingBox::intersects(BoundingBox other)
+bool BoundingBox::collidesWith(BoundingBox other)
+{
+	return collidesWith(other, true);
+}
+
+bool BoundingBox::collidesWith(BoundingBox other, bool checkOthersChildren)
 {
 	const bounds b1 = getBounds();
 	const bounds b2 = other.getBounds();
@@ -86,7 +91,13 @@ bool BoundingBox::intersects(BoundingBox other)
 	if (b1.x2 < b2.x1 || b2.x2 < b1.x1 ||
 		b1.y2 < b2.y1 || b2.y2 < b1.y1 ||
 		b1.z2 < b2.z1 || b2.z2 < b1.z1)
-		return child != nullptr ? child->intersects(other) : false;
+	{
+		if (this->child != nullptr && this->child->collidesWith(other, false))
+			return true;
+		if (other.child != nullptr && checkOthersChildren)
+			return collidesWith(*other.child, true);
+		return false;
+	}
 	return true;
 }
 

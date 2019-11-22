@@ -261,8 +261,8 @@ void init(int w, int h)
 	submarine->setFast();
 
 	enemySubs.push_back(new AISubmarine(texture, qobj));
-	enemySubs.push_back(new AISubmarine(texture, qobj));
 	enemySubs.at(0)->reset();
+	enemySubs.push_back(new AISubmarine(texture, qobj));
 	enemySubs.at(1)->reset();
 	srand(234);
 }
@@ -320,11 +320,11 @@ void mainLoop(int x)
 			float x, z;
 			do
 			{
-				x = rand() % 50 + 20;
-				z = rand() % 50 + 20;
+				x = rand() % 90;
+				z = rand() % 90;
 				if (rand() % 2 == 0) x *= -1;
 				if (rand() % 2 == 0) z *= -1;
-			} while (fabs(x - submarine->getPosition().x) < 15 || fabs(z - submarine->getPosition().z) < 15);
+			} while (fabs(x - submarine->getPosition().x) < 25 || fabs(z - submarine->getPosition().z) < 25);
 			enemySub->getBoundingBox().setPosition(x, 0, z);
 			enemySub->rotate(rand() % 360);
 			enemySub->setPosition(x, getHighestGroundPosition(enemySub->getBoundingBox(), true).y+10, z);
@@ -355,7 +355,7 @@ void mainLoop(int x)
 				enemySub->rotationDirection = requiredRotationDir;
 			else if (enemySub->rotationCalcCooldown == 0)
 			{
-				if (rand() % 100 <= 5) // 5% chance we start turning
+				if (rand() % 100 <= 25) // 25% chance we start turning
 				{
 					enemySub->rotationDirection = 0.29f+(static_cast <float> (rand()) / static_cast <float> (RAND_MAX))*0.7f;
 					enemySub->rotationDirection *= rand() % 2 == 0 ? -1 : 1;
@@ -392,7 +392,26 @@ void mainLoop(int x)
 		}
 		enemySub->tick(enemySub->powerDirection, enemySub->rotationDirection, enemySub->verticalDirection, deltaTime);
 		if (!withinGroundMeshBounds(enemySub->getBoundingBox()) || !aboveGroundMesh(enemySub->getBoundingBox()))
+			enemySub->reset(); // TODO explosion animation?
+		else if (enemySub->getBoundingBox().collidesWith(submarine->getBoundingBox()))
+		{
 			enemySub->reset();
+			submarine->reset();
+			// TODO explosion animation?
+		}
+		else
+		{
+			for (int j = i+1; j < enemySubs.size(); j++)
+			{
+				if (enemySub->getBoundingBox().collidesWith(enemySubs[j]->getBoundingBox()))
+				{
+					enemySub->reset();
+					enemySubs[j]->reset();
+					// TODO explosion animation?
+					break;
+				}
+			}
+		}
 	}
 	
 	//printf("below mesh = %i\n", belowMesh(submarine->getBoundingBox()));
