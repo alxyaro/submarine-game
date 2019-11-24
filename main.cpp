@@ -52,6 +52,15 @@ const int meshResolution = 100;
 const float meshSize = 200;
 Vector3D meshOrigin;
 QuadMesh groundMesh;
+struct groundCylinder
+{
+	Vector3 pos;
+	float radius;
+	float height;
+};
+std::vector<groundCylinder> groundCylinders;
+GLUquadric* groundCylinderQuadric;
+unsigned int groundObjTextureId;
 
 Submarine* submarine;
 bool periscopeView;
@@ -231,10 +240,37 @@ void init(int w, int h)
 				}
 			}
 
+			if (rand() % 250 == 0 && groundCylinders.size() < 10)
+			{
+				float x = fabs(position->x);
+				float z = fabs(position->z);
+				float radius = 2.0f + rand() % 5;
+				if (x > 25 && x < 75 && z > 25 && z < 75)
+				{
+					// add random cylinder at this location
+					groundCylinders.push_back({ {position->x, position->y - 10.0f, position->z }, radius, 15.0f + rand() % 20 });
+				}
+			}
+			
+			
 			currentVertex++;
 		}
 	}
 	ComputeNormalsQM(&groundMesh);
+	groundCylinderQuadric = gluNewQuadric();
+	gluQuadricTexture(groundCylinderQuadric, GL_TRUE);
+
+	int width, height, nrChannels;
+	
+	glGenTextures(1, &groundObjTextureId);
+	glBindTexture(GL_TEXTURE_2D, groundObjTextureId);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	unsigned char* metal2Data = stbi_load("textured_metal.png", &width, &height, &nrChannels, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, metal2Data);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 
 	// Set up the bounding box of the scene
@@ -250,7 +286,6 @@ void init(int w, int h)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-	int width, height, nrChannels;
 	unsigned char* subTextureData = stbi_load("sub-metal.png", &width, &height, &nrChannels, 0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, subTextureData);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -276,7 +311,6 @@ void init(int w, int h)
 
 	GLUquadric* qobj = gluNewQuadric();
 	gluQuadricTexture(qobj, GL_TRUE);
-	gluQuadricDrawStyle(qobj, GLU_FILL);
 
 	submarine = new Submarine(subTextureId, qobj);
 	submarine->reset();
@@ -433,6 +467,19 @@ void mainLoop(int x)
 			if (idealDiff > 0.5)
 			{
 				enemySub->verticalDirection = 1;
+				if (/*requiredRotationDir == 0 && */aheadSurface.y+10 - bbox.getLowerY() >= 10)
+				{
+					// steep elevation change ahead
+					
+					enemySub->rotate(90);
+					float heightLeft = getHighestGroundPosition(*enemySub->forwardViewBb, true).y;
+					enemySub->rotate(-180);
+					float heightRight = getHighestGroundPosition(*enemySub->forwardViewBb, true).y;
+					enemySub->rotate(90);
+
+					enemySub->rotationDirection = heightLeft < heightRight ? -1 : 1;
+					enemySub->rotationCalcCooldown = 0; // recompute next tick
+				}
 			}
 			else if (idealDiff < -2)
 			{
@@ -577,6 +624,14 @@ Vector3D getMeshVertex(int meshX, int meshZ)
 	int index = (-meshZ) * (meshResolution + 1) + meshX;
 	return groundMesh.vertices[index].position;
 }
+float clamp(float n, float lower, float upper) {
+	if (n < lower)
+		return lower;
+	if (n > upper)
+		return upper;
+	return n;
+	return fmin(upper, fmax(n, lower));
+}
 Vector3 getHighestGroundPosition(BoundingBox bbox, bool considerChildren)
 {
 	bounds bbounds = bbox.getBounds();
@@ -652,6 +707,37 @@ Vector3 getHighestGroundPosition(BoundingBox bbox, bool considerChildren)
 		result.z /= averageCount;
 	}
 
+	bbounds = bbox.getBounds();
+	for (int i = 0; i < groundCylinders.size(); i++)
+	{
+		groundCylinder cylinder = groundCylinders[i];
+
+		if (cylinder.pos.y+cylinder.height < result.y)
+			continue;
+
+		Vector3 bbCenterPos = bbox.getCenterPosition();
+		float xDiff = fabs(cylinder.pos.x - bbCenterPos.x);
+		float zDiff = fabs(cylinder.pos.z - bbCenterPos.z);
+		float xLength = bbounds.x2 - bbounds.x1;
+		float zLength = bbounds.z2 - bbounds.z1;
+		if (xDiff > cylinder.radius + xLength / 2 || zDiff > cylinder.radius + zLength / 2)
+			continue;
+
+		float x = clamp(cylinder.pos.x, bbounds.x1, bbounds.x2);
+		float z = clamp(cylinder.pos.z, bbounds.z1, bbounds.z2);
+
+		float distanceX = cylinder.pos.x - x;
+		float distanceZ = cylinder.pos.z - z;
+		
+		float distanceSquared = powf(distanceX, 2) + powf(distanceZ, 2);
+		if (distanceSquared < powf(cylinder.radius,2))
+		{
+			//result.x = cylinder.pos.x;
+			result.y = cylinder.pos.y + cylinder.height;
+			//result.z = cylinder.pos.z;
+		}
+	}
+	
 	if (considerChildren && bbox.child != nullptr)
 	{
 		Vector3 other = getHighestGroundPosition(*bbox.child, true);
@@ -744,6 +830,32 @@ void display()
 
 	DrawMeshQM(&groundMesh, meshResolution, debugMode); // draw ground mesh
 	// TODO extra ground objects (cubes)
+
+	GLfloat ambient[] = { 0.3F, 0.3F, 0.3F, 1.0F };
+	GLfloat specular[] = { 0.0F, 0.0F, 0.0F, 1.0F };
+	GLfloat diffuse[] = { 0.7F, 0.7F, 0.7F, 1.0F };
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glBindTexture(GL_TEXTURE_2D, groundObjTextureId);
+	if (debugMode)
+		gluQuadricDrawStyle(groundCylinderQuadric, GLU_LINE);
+	for (int i = 0; i < groundCylinders.size(); i++)
+	{
+		groundCylinder cylinder = groundCylinders[i];
+		glPushMatrix();
+		glTranslatef(cylinder.pos.x, cylinder.pos.y, cylinder.pos.z);
+		glPushMatrix();
+		glTranslatef(0, cylinder.height, 0);
+		glScalef(1, 0.01, 1);
+		gluSphere(groundCylinderQuadric, cylinder.radius, 15, 15);
+		glPopMatrix();
+		glRotatef(-90, 1, 0, 0);
+		gluCylinder(groundCylinderQuadric, cylinder.radius, cylinder.radius, cylinder.height, 15, 15);
+		glPopMatrix();
+	}
+	if (debugMode)
+		gluQuadricDrawStyle(groundCylinderQuadric, GLU_FILL);
 
 	glutSwapBuffers(); // using GLUT_DOUBLE
 }

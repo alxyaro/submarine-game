@@ -19,11 +19,9 @@ void Torpedo::draw()
 	glTranslatef(boundingBox->getPosition().x, boundingBox->getPosition().y, boundingBox->getPosition().z);
 
 	float angle = direction->getAngleToAxis(0,0,-1) * 180.0 / PI;
-	//printf("%f\n", angle);
 	Vector3 normal = Vector3{ 0,0,-1 }.crossProduct(*direction);
 	glRotatef(angle, normal.x, normal.y, normal.z);
 	
-	// TODO rotation
 	glScalef(0.2, 0.2, 0.2);
 	glTranslatef(0, 0, 0);
 	gluCylinder(quadric, 1, 1, 12, 20, 20);

@@ -38,6 +38,15 @@ Vector3 BoundingBox::getPosition()
 	return *position;
 }
 
+Vector3 BoundingBox::getCenterPosition()
+{
+	return {
+		position->x + offset->x,
+		position->y + offset->y,
+		position->z + offset->z
+	};
+}
+
 
 void BoundingBox::setPosition(float x, float y, float z)
 {

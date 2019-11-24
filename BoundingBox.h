@@ -19,6 +19,7 @@ public:
 	BoundingBox(Vector3* position, Vector3* offset, float size); // centered at position+offset
 	BoundingBox(Vector3* position, Vector3* offset, Vector3* size); // centered at position+offset
 	Vector3 getPosition();
+	Vector3 getCenterPosition();
 	void setPosition(float, float, float);
 	void shift(float, float, float);
 	void rotate(float);
