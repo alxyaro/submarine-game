@@ -31,7 +31,7 @@ void Submarine::reset()
 		lastBB = newBB;
 	}
 
-	setPosition(0, 17, 0);
+	setPosition(0, 20, 0);
 	
 	submarineRotation = 0;
 	rotate(-90);

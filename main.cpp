@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(viewportWidth, viewportHeight);
 	glutInitWindowPosition(0,0);
-	glutCreateWindow("Assignment 1");
+	glutCreateWindow("Assignment 3");
 
 	glewExperimental = TRUE;
 	glewInit();
@@ -904,6 +904,30 @@ void keyboardUp(unsigned char key, int x, int y)
 		keyMask &= ~KEY_ZOOM_IN; break;
 	case 'n':
 		keyMask &= ~KEY_ZOOM_OUT; break;
+	case 'h':
+		printf("=============== Tutorial ===============\n");
+		printf("Basic Controls:\n");
+		printf(" - hold w to move forward (start propeller)\n");
+		printf(" - hold s to move backward (reverse propeller)\n");
+		printf(" - hold a to rotate counter-clockwise\n");
+		printf(" - hold d to rotate clockwise\n");
+		printf(" - hold [up arrow] to move upwards\n");
+		printf(" - hold [down arrow] to move downwards\n");
+		printf(" - press [space] to fire a homing torpedo\n");
+		printf(" - press r to reset submarine/movement\n");
+		printf("\n");
+		printf("Periscope Controls:\n");
+		printf(" - press F2 to toggle between periscope/world views\n");
+		printf(" - hold [left arrow] to turn the periscope counter-clockwise\n");
+		printf(" - hold [right arrow] to turn the periscope clockwise\n");
+		printf(" - press x to align submarine with periscope\n");
+		printf(" - press m to zoom-in the periscope\n");
+		printf(" - press n to zoom-out the periscope\n");
+		printf("\n");
+		printf("Misc Controls:\n");
+		printf(" - press F3 to toggle debug mode\n");
+		printf("========================================\n");
+		break;
 	}
 }
 
@@ -941,16 +965,6 @@ void specialUp(int key, int x, int y)
 	case GLUT_KEY_F3:
 		debugMode = !debugMode; break;
 	case GLUT_KEY_F1:
-		printf("=============== Tutorial ===============\n");
-		printf("Submarine Controls:\n");
-		printf(" - hold w to move forward (start propeller)\n");
-		printf(" - hold s to move backward (reverse propeller)\n");
-		printf(" - hold d to rotate clockwise\n");
-		printf(" - hold a to rotate counter-clockwise\n");
-		printf(" - hold [up arrow] to move upwards\n");
-		printf(" - hold [down arrow] to move downwards\n");
-		printf(" - press r to reset submarine/movement\n");
-		printf("========================================\n");
-		break;
+		printf("It's the h key now, buddy.\n");
 	}
 }
